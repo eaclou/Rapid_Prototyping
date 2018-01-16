@@ -1,0 +1,51 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+Texture2D<float4> Source;
+RWTexture2D<float4> Result;
+
+uint _Gen;
+float _SeedA;
+float _SeedB;
+float _MutationRate;
+float _MutationSize;
+
+uint wang_hash(uint seed)
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+float rand(float2 co){
+    return frac(sin(dot(co.xy ,float2(12.9898,78.233))) * 43758.5453);
+}
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{	
+	float4 val = Source[id.xy];
+
+	float2 seed = float2(id.x + _SeedA, id.y + _SeedB);
+	float randRollR = rand(seed);
+	float randRollG = rand(id.xy + randRollR);
+	float randRollB = rand(id.xy + randRollG);
+	
+	if(randRollR < _MutationRate) {
+		float randWeightR = rand(id.xy + float2(_SeedA, _SeedB) + randRollR) * 2.0 - 1.0;
+		val.r = lerp(val.r, randWeightR, _MutationSize);
+	}
+	if(randRollG < _MutationRate) {
+		float randWeightG = rand(id.xy + float2(_SeedA, _SeedB) + randRollG) * 2.0 - 1.0;
+		val.g = lerp(val.g, randWeightG, _MutationSize);
+	}
+	if(randRollB < _MutationRate) {
+		float randWeightB = rand(id.xy + float2(_SeedA, _SeedB) + randRollB) * 2.0 - 1.0;
+		val.b = lerp(val.b, randWeightB, _MutationSize);
+	}
+
+	Result[id.xy] = val;
+}

@@ -1,0 +1,76 @@
+﻿
+
+Texture2D<float4> sourceNoiseTexture;
+Texture2D<float4> weightsRT;  // readOnly for brain
+RWTexture2D<float4> ResultRT;  // Write to this texture!
+float _Res;
+int _Layer;
+SamplerState _PointRepeat;
+
+// Each #kernel tells which function to compile; you can have many kernels
+
+
+#pragma kernel CSMain
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{	
+	uint width;
+	uint height;
+	weightsRT.GetDimensions(width, height);
+
+	float resolution = _Res;
+	
+	float2 centerUV = float2((float)id.x/resolution, (float)id.y/resolution);
+	float pixSize = 1.0 / resolution;
+	float sum = 0;
+	for(uint x = 0; x < width; x++) {
+		for(uint y = 0; y < height; y++) {
+			float2 uvOffset = float2((float)(x - round(width/2)), (float)(y - round(height/2))) * pixSize;
+			float4 sourceColor = sourceNoiseTexture.SampleLevel(_PointRepeat, centerUV + uvOffset, 0);
+			float4 weights = weightsRT[uint2(x,y)];
+
+			if(_Layer == 0) {
+				sum += weights.x * sourceColor.x;
+			}
+			if(_Layer == 1) {
+				sum += weights.y * sourceColor.x;
+			}
+			if(_Layer == 2) {
+				sum += weights.z * sourceColor.x;
+			}
+			
+			//sum += sourceColor.x;
+		}
+	}
+
+	float4 centerCol = sourceNoiseTexture.SampleLevel(_PointRepeat, centerUV, 0);
+
+	//float val = saturate(sum * 0.5 + 0.5);   // linear centered
+	float val = (1.0/(1.0 + exp(-2.0 * sum)));  // sigmoid
+	//val = sum / 9.0;
+
+	//float4 val = lerp(float4(val, val, val, 1), centerCol, 0.6);	
+
+	float4 newColor = lerp(float4(val, val, val, 1), centerCol, 0);	
+	
+	ResultRT[id.xy] = newColor;
+
+
+
+	// GeneratedTex Coordinates = id.xy
+	//float4 sourceColor = sourceNoiseTexture.SampleLevel(_PointRepeat, uv, 0);
+	//float4 sourceColor = sourceNoiseTexture[id.xy];	
+	//ResultRT[id.xy] = sourceNoiseTexture.SampleLevel(_PointRepeat, uv, 0);
+	//ResultRT[uint2(1,1)] = float4(10,0.1,1,1);	
+	// outputLayerNeuronID:
+	//int neuronIndex = id.x;
+	//uint width;
+	//uint height;
+	//weightsRT.GetDimensions(width, height);
+	//float sum = 0;
+	//for(uint i = 0; i < width; i++) {
+	//	sum += weightsRT[uint2(i,neuronIndex)] * inputNeuronsCB[i];
+	//}		
+	//outputNeuronsCB[neuronIndex] = (1.0/(1.0 + exp(-2.0 * sum))); // ACTIVATION FUNCTION  // Sigmoid
+	//outputNeuronsCB[neuronIndex] = sum / (1.0 + sqrt(1.0 + sum * sum));   // TanH
+}

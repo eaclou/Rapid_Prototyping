@@ -1,0 +1,52 @@
+﻿// https://en.wikibooks.org/wiki/Cg_Programming/Unity/Computing_Color_Histograms
+
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSClearHistogramBuffer
+#pragma kernel CSGenerateHistogram
+
+Texture2D<float4> Texture;
+RWStructuredBuffer<uint> Histogram0CB;
+RWStructuredBuffer<uint> Histogram1CB;
+RWStructuredBuffer<uint> Histogram2CB;
+
+SamplerState samplerPointRepeat;
+
+[numthreads(1,1,1)]
+void CSClearHistogramBuffer (uint3 id : SV_DispatchThreadID)
+{
+	Histogram0CB[id.x] = 0;
+	Histogram1CB[id.x] = 0;
+	Histogram2CB[id.x] = 0;
+}
+
+
+[numthreads(8,8,1)]
+void CSGenerateHistogram (uint3 id : SV_DispatchThreadID)
+{
+	uint width;
+	uint height;
+	Texture.GetDimensions(width, height);
+	
+	// !!!!!!!!!!!!!!!! HARDCODED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING!!!! WILL BREAK FOR NON- 64x64 RESOLUTIONS !!!!!!!!!!!!!!
+	float2 centerUV = float2((float)id.x/64.0, (float)id.y/64.0); // always issues with int/float and rounding....
+
+	float4 pixelValue0 = Texture.SampleLevel(samplerPointRepeat, centerUV, 0);
+	float4 pixelValue1 = Texture.SampleLevel(samplerPointRepeat, centerUV, 1);
+	float4 pixelValue2 = Texture.SampleLevel(samplerPointRepeat, centerUV, 2);
+
+	float avg0 = (pixelValue0.r + pixelValue0.g + pixelValue0.b) / 3.0;
+	float avg1 = (pixelValue1.r + pixelValue1.g + pixelValue1.b) / 3.0;
+	float avg2 = (pixelValue2.r + pixelValue2.g + pixelValue2.b) / 3.0;
+
+	uint col0 = (uint)floor(15.95 * avg0);
+	uint col1 = (uint)floor(15.95 * avg1);
+	uint col2 = (uint)floor(15.95 * avg2);
+	//uint col3 = (uint)floor(15.95 * pixelValue3.x);
+	//uint col = (uint)floor(15.95 * Texture[id.xy].x);
+
+    InterlockedAdd(Histogram0CB[col0], 1);
+	InterlockedAdd(Histogram1CB[col1], 1);
+	InterlockedAdd(Histogram2CB[col2], 1);
+	//InterlockedAdd(HistogramCB[col3], 1);
+}
