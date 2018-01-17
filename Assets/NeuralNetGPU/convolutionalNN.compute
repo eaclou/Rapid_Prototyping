@@ -1,0 +1,128 @@
+﻿
+
+Texture2D<float4> InputTexture;
+RWTexture3D<float4> weightsRT;  
+Texture3D<float4> readWeights;  // readOnly for brain
+RWTexture2D<float4> OutputTexture;  // Write to this texture!
+RWStructuredBuffer<float4> debugCB;
+RWStructuredBuffer<float4> weightsCB;
+float _Res;
+
+uint _ConvWidth;
+uint _ConvHeight;
+uint _ConvDepth;
+
+SamplerState _PointRepeat;
+
+// Each #kernel tells which function to compile; you can have many kernels
+
+float activationFunctionSigmoid(float sum) {
+	return (1.0/(1.0 + exp(-2.0 * sum)));  // sigmoid
+}
+
+#pragma kernel CSMain
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{	
+	
+	float resolution = _Res;
+	
+	float2 centerUV = float2((float)id.x/resolution, (float)id.y/resolution);
+	float pixSize = 1.0 / resolution;
+
+	float channelSums[4] = {0, 0, 0, 0};
+	float channelMaskArray[4] = {0, 0, 0, 0};
+	for(uint m = 0; m < _ConvDepth; m++) {
+		channelMaskArray[m] = 1;
+	}
+	float4 channelMask = float4(channelMaskArray[0], channelMaskArray[1], channelMaskArray[2], channelMaskArray[3]);
+	
+	for(uint z = 0; z < _ConvDepth; z++) {  // for each of previous layer's filters
+		for(uint x = 0; x < _ConvWidth; x++) {
+			for(uint y = 0; y < _ConvHeight; y++) {
+				
+				float2 uvOffset = float2((float)(x - round(_ConvWidth/2)), (float)(y - round(_ConvHeight/2))) * pixSize;
+				
+				float4 sourceColor = InputTexture.SampleLevel(_PointRepeat, centerUV + uvOffset, 0);
+				
+				float4 weights = readWeights[uint3(x,y,z)];
+					
+				// X:
+				channelSums[z] += sourceColor.x * weights.x;
+				channelSums[z] += sourceColor.y * weights.y;
+				channelSums[z] += sourceColor.z * weights.z;
+				channelSums[z] += sourceColor.w * weights.w;
+					
+				// Y:
+				channelSums[z] += sourceColor.x * weights.x;
+				channelSums[z] += sourceColor.y * weights.y;
+				channelSums[z] += sourceColor.z * weights.z;
+				channelSums[z] += sourceColor.w * weights.w;
+					
+				// Z:
+				channelSums[z] += sourceColor.x * weights.x;
+				channelSums[z] += sourceColor.y * weights.y;
+				channelSums[z] += sourceColor.z * weights.z;
+				channelSums[z] += sourceColor.w * weights.w;
+					
+				// W:
+				channelSums[z] += sourceColor.x * weights.x;
+				channelSums[z] += sourceColor.y * weights.y;
+				channelSums[z] += sourceColor.z * weights.z;
+				channelSums[z] += sourceColor.w * weights.w;
+			}
+		}
+	}
+	
+	float valX = activationFunctionSigmoid(channelSums[0]);
+	float valY = activationFunctionSigmoid(channelSums[1]);
+	float valZ = activationFunctionSigmoid(channelSums[2]);
+	float valW = activationFunctionSigmoid(channelSums[3]);
+	
+
+	float4 centerCol = InputTexture.SampleLevel(_PointRepeat, centerUV, 0);
+	float4 newColor = lerp(float4(valX * channelMask.x, valY * channelMask.y, valZ * channelMask.z, valW * channelMask.w), centerCol, 0);	// strength of filter (full for now)	
+	OutputTexture[id.xy] = newColor;
+
+	//OutputTexture[id.xy] = centerCol.x * readWeights[uint3(1,1,0)].x;
+
+
+	//float val = saturate(sum * 0.5 + 0.5);   // linear centered
+	//float val = (1.0/(1.0 + exp(-2.0 * sum)));  // sigmoid
+	//val = sum / 9.0;
+	//float4 val = lerp(float4(val, val, val, 1), centerCol, 0.6);	
+	// GeneratedTex Coordinates = id.xy
+	//float4 sourceColor = sourceNoiseTexture.SampleLevel(_PointRepeat, uv, 0);
+	//float4 sourceColor = sourceNoiseTexture[id.xy];	
+	//ResultRT[id.xy] = sourceNoiseTexture.SampleLevel(_PointRepeat, uv, 0);
+	//ResultRT[uint2(1,1)] = float4(10,0.1,1,1);	
+	// outputLayerNeuronID:
+	//int neuronIndex = id.x;
+	//uint width;
+	//uint height;
+	//weightsRT.GetDimensions(width, height);
+	//float sum = 0;
+	//for(uint i = 0; i < width; i++) {
+	//	sum += weightsRT[uint2(i,neuronIndex)] * inputNeuronsCB[i];
+	//}		
+	//outputNeuronsCB[neuronIndex] = (1.0/(1.0 + exp(-2.0 * sum))); // ACTIVATION FUNCTION  // Sigmoid
+	//outputNeuronsCB[neuronIndex] = sum / (1.0 + sqrt(1.0 + sum * sum));   // TanH
+}
+
+#pragma kernel ReadWeights
+[numthreads(1,1,1)]
+void ReadWeights (uint3 id : SV_DispatchThreadID)
+{
+	int bufferIndex = id.z * 3 * 3 + id.y * 3 + id.x;
+
+	debugCB[bufferIndex] = weightsRT[id];
+}
+
+#pragma kernel InitWeights
+[numthreads(1,1,1)]
+void InitWeights (uint3 id : SV_DispatchThreadID)
+{
+	int bufferIndex = id.z * _ConvWidth * _ConvHeight + id.y * _ConvWidth + id.x;
+	float4 color = weightsCB[bufferIndex];
+	weightsRT[id] = color;
+}

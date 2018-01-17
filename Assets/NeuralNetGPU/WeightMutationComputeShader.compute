@@ -1,10 +1,14 @@
 ﻿// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
+#pragma kernel CSCopy3D
 
-Texture2D<float4> Source;
-RWTexture2D<float4> Result;
+//Texture2D<float4> Source;
+//RWTexture2D<float4> Result;
 
-uint _Gen;
+Texture3D<float4> SourceTex3D;
+RWTexture3D<float4> ResultTex3D;
+
+//uint _Gen;
 float _SeedA;
 float _SeedB;
 float _MutationRate;
@@ -27,9 +31,9 @@ float rand(float2 co){
 [numthreads(1,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {	
-	float4 val = Source[id.xy];
+	float4 val = SourceTex3D[id];
 
-	float2 seed = float2(id.x + _SeedA, id.y + _SeedB);
+	float2 seed = float2(id.x + _SeedA, id.y + _SeedB + id.z);
 	float randRollR = rand(seed);
 	float randRollG = rand(id.xy + randRollR);
 	float randRollB = rand(id.xy + randRollG);
@@ -47,5 +51,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 		val.b = lerp(val.b, randWeightB, _MutationSize);
 	}
 
-	Result[id.xy] = val;
+	ResultTex3D[id] = val;
+}
+
+
+[numthreads(1,1,1)]
+void CSCopy3D (uint3 id : SV_DispatchThreadID)
+{	
+	float4 val = SourceTex3D[id];
+	ResultTex3D[id] = val;
 }

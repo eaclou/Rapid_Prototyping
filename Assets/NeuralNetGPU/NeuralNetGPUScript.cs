@@ -35,24 +35,26 @@ public class NeuralNetGPUScript : MonoBehaviour {
     public ComputeShader weightMutationComputeShader;
 
     public Material displayMat;
+    public Material displayMat3D;
     public Shader blitShader;
+
+    private int populationSize = 24;
+    private FilterAgentConvolve[] population;
+    private FilterAgentConvolve[] tempPopulation;
     
     // Need a pair of these per evaluation instance:
-    private RenderTexture[] weightsRT;
-    private RenderTexture[] swapWeightsRT;
-    //private ComputeBuffer[] worldDataCB;
+    //private RenderTexture[] weightsRT;
+    //private RenderTexture[] swapWeightsRT;
     public Texture2D referenceTexture;  // image/pattern trying to match
     private Texture2D sourceNoiseTexture;  // the input to the agent networks (noise)
     // v v v Eventually replace with 2 RT Arrays that alternate roles to avoid extra Blit() each round...
-    private RenderTexture[] sourceTexturesRT;  // the active modified version of each agent's texture  
-    private RenderTexture[] generatedTexturesRT;  // output of each agent(filter)
+    //private RenderTexture[] sourceTexturesRT;  // the active modified version of each agent's texture  
+    //private RenderTexture[] generatedTexturesRT;  // output of each agent(filter)
 
     private RenderTexture debugRT;
 
     //private ComputeBuffer[] inputNeuronsCB;
-    //private ComputeBuffer[] outputNeuronsCB;
-
-    private int populationSize = 24;
+    //private ComputeBuffer[] outputNeuronsCB;    
 
     public GameObject displayQuadBestWeights;
     public GameObject displayQuadReference;
@@ -62,23 +64,18 @@ public class NeuralNetGPUScript : MonoBehaviour {
     //private ComputeBuffer inputMappingCB;  // tells agent's inputNeurons what worldData index they are linked to
     //private ComputeBuffer outputMappingCB; // tells agent's outputNeurons what worldData index they are linked to
 
-    int imageResX = 64;
-    int imageResY = 64;
-
-    int numInputsX = 9;
-    int numInputsY = 9;
-    int numOutputs = 1;
-
+    int imageResolution = 64;
+    
     int maxTimeSteps = 1;
     int curTimeStep = 0;
 
     int curGeneration = 0;
-    int maxGenerations = 1280;
+    int maxGenerations = 5000;
 
     bool run = true;
 
     public float mutationRate = 0.05f;
-    public float mutationSize = 0.01f;
+    public float mutationSize = 1f;
 
     // Use this for initialization
     void Start () {
@@ -94,30 +91,47 @@ public class NeuralNetGPUScript : MonoBehaviour {
 
     private void FirstTimeInit() {
 
-        // Create Population:
-        weightsRT = new RenderTexture[populationSize];
-        swapWeightsRT = new RenderTexture[populationSize];
 
-        generatedTexturesRT = new RenderTexture[populationSize];
-        sourceTexturesRT = new RenderTexture[populationSize];
+
+        //weightsRT = new RenderTexture[populationSize];
+        //swapWeightsRT = new RenderTexture[populationSize];
+
+        //generatedTexturesRT = new RenderTexture[populationSize];
+        //sourceTexturesRT = new RenderTexture[populationSize];
 
         //worldDataCB = new ComputeBuffer[populationSize];
         //inputNeuronsCB = new ComputeBuffer[populationSize];
         //outputNeuronsCB = new ComputeBuffer[populationSize];
+
+        // Create Population:
+        population = new FilterAgentConvolve[populationSize];
+        tempPopulation = new FilterAgentConvolve[populationSize];
+
         GenerateReferenceTexture();
         RegenerateSourceNoiseTexture();
 
         for (int i = 0; i < populationSize; i++) {
-            // create each instance:
+            // create each agent:
+
+            FilterAgentConvolve filterAgent = new FilterAgentConvolve();
+            // Create weight layer textures with initial values
+            filterAgent.InitializeGenome(agentBrainComputeShader, weightMutationComputeShader, imageResolution);
+            population[i] = filterAgent;
+
+
+            // Won't be used until selection / reproduction, but will reuse this array to avoid creation/destruction of agents every Generation
+            FilterAgentConvolve tempFilterAgent = new FilterAgentConvolve();
+            tempFilterAgent.InitializeGenome(agentBrainComputeShader, weightMutationComputeShader, imageResolution);
+            tempPopulation[i] = tempFilterAgent;
+
+
 
             //ComputeBuffer inNeuronsCB = new ComputeBuffer(numInputsX * numInputsY, sizeof(float));
             //inputNeuronsCB[i] = inNeuronsCB;
-
             //ComputeBuffer outNeuronsCB = new ComputeBuffer(numOutputs, sizeof(float));
             //outputNeuronsCB[i] = outNeuronsCB;
 
-
-            RenderTexture weights = new RenderTexture(numInputsX, numInputsY, 1, RenderTextureFormat.ARGBFloat);
+            /*RenderTexture weights = new RenderTexture(numInputsX, numInputsY, 1, RenderTextureFormat.ARGBFloat);
             weights.filterMode = FilterMode.Point;
             weights.enableRandomWrite = true;
             weights.autoGenerateMips = true;
@@ -162,6 +176,7 @@ public class NeuralNetGPUScript : MonoBehaviour {
             //sourceTex.Create();
             Graphics.Blit(sourceNoiseTexture, sourceTex);
             sourceTexturesRT[i] = sourceTex;
+            */
         }
 
         CreateDisplayQuads();
@@ -174,9 +189,9 @@ public class NeuralNetGPUScript : MonoBehaviour {
         //testRT.Create();
         displayMat.SetTexture("_MainTex", sourceNoiseTexture);
 
-        Material bestAgentMat = new Material(displayMat);
+        Material bestAgentMat = new Material(displayMat3D);
         displayQuadBestWeights.GetComponent<MeshRenderer>().material = bestAgentMat;
-        bestAgentMat.SetTexture("_MainTex", weightsRT[0]);
+        bestAgentMat.SetTexture("_MainTex", population[0].GetWeights());
 
         Material refImgMat = new Material(displayMat);
         displayQuadReference.GetComponent<MeshRenderer>().material = refImgMat;
@@ -260,11 +275,8 @@ public class NeuralNetGPUScript : MonoBehaviour {
     void Update () {
         if(run) {
             if (curTimeStep < maxTimeSteps) {
-                for(int t = 0; t < 1; t++) {
-                    Tick();
-                    curTimeStep++;
-                }
-                
+                Tick();
+                curTimeStep++;
             }
             else {
                 // End of current Generation:
@@ -276,21 +288,26 @@ public class NeuralNetGPUScript : MonoBehaviour {
                 //
                 //Graphics.Blit(referenceTexture, debugRT);
                 
+                
                 ComputeBuffer refHistogram0CB = new ComputeBuffer(16, sizeof(uint));
                 ComputeBuffer refHistogram1CB = new ComputeBuffer(16, sizeof(uint));
-                ComputeBuffer refHistogram2CB = new ComputeBuffer(16, sizeof(uint));
+                ComputeBuffer refHistogramLocal0CB = new ComputeBuffer(64, sizeof(uint));
+                ComputeBuffer refHistogramLocal1CB = new ComputeBuffer(64, sizeof(uint));
                 int kernelRefClearHistogram = imageMeasurementComputeShader.FindKernel("CSClearHistogramBuffer");
                 int kernelRefGenerateHistogram = imageMeasurementComputeShader.FindKernel("CSGenerateHistogram");
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "Histogram0CB", refHistogram0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "Histogram1CB", refHistogram1CB);
-                imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "Histogram2CB", refHistogram2CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "HistogramLocal0CB", refHistogramLocal0CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "HistogramLocal1CB", refHistogramLocal1CB);
+
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "Histogram0CB", refHistogram0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "Histogram1CB", refHistogram1CB);
-                imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "Histogram2CB", refHistogram2CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "HistogramLocal0CB", refHistogramLocal0CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "HistogramLocal1CB", refHistogramLocal1CB);
                 imageMeasurementComputeShader.SetTexture(kernelRefGenerateHistogram, "Texture", referenceTexture);
 
                 imageMeasurementComputeShader.Dispatch(kernelRefClearHistogram, 16, 1, 1);
-                imageMeasurementComputeShader.Dispatch(kernelRefGenerateHistogram, imageResX / 8, imageResY / 8, 1);
+                imageMeasurementComputeShader.Dispatch(kernelRefGenerateHistogram, imageResolution / 8, imageResolution / 8, 1);
 
                 uint[] refHistogram0Array = new uint[16];
                 refHistogram0CB.GetData(refHistogram0Array);                
@@ -298,16 +315,21 @@ public class NeuralNetGPUScript : MonoBehaviour {
                 uint[] refHistogram1Array = new uint[16];
                 refHistogram1CB.GetData(refHistogram1Array);
                 refHistogram1CB.Release();
-                uint[] refHistogram2Array = new uint[16];
-                refHistogram2CB.GetData(refHistogram2Array);
-                refHistogram2CB.Release();
+                uint[] refHistogramLocal0Array = new uint[64];
+                refHistogramLocal0CB.GetData(refHistogramLocal0Array);
+                refHistogramLocal0CB.Release();
+                uint[] refHistogramLocal1Array = new uint[64];
+                refHistogramLocal1CB.GetData(refHistogramLocal1Array);
+                refHistogramLocal1CB.Release();
                 //
-                string debugTxt = "refHistogramArray: ";
-                for (int j = 0; j < refHistogram0Array.Length; j++) {
-                    debugTxt += j.ToString() + ": " + refHistogram0Array[j].ToString() + ", ";
+                /*
+                string debugTxt = "refHistogramLocal0Array: ";
+                for (int j = 0; j < refHistogramLocal0Array.Length; j++) {
+                    debugTxt += j.ToString() + ": " + refHistogramLocal0Array[j].ToString() + ", ";
                 }
-                //Debug.Log(debugTxt);
+                Debug.Log(debugTxt);
                 //
+                */
 
                 // Collect scores:
                 for (int i = 0; i < populationSize; i++) {
@@ -317,54 +339,64 @@ public class NeuralNetGPUScript : MonoBehaviour {
                     //Debug.Log("Instance [" + i.ToString() + "]: " + dataArray[0].ToString() + ", " + dataArray[1].ToString());
 
                     //Graphics.Blit(generatedTexturesRT[i], debugRT);
-                    generatedTexturesRT[i].GenerateMips();
+                    
+                    //generatedTexturesRT[i].GenerateMips();
 
                     ComputeBuffer histogram0CB = new ComputeBuffer(16, sizeof(uint));
                     ComputeBuffer histogram1CB = new ComputeBuffer(16, sizeof(uint));
-                    ComputeBuffer histogram2CB = new ComputeBuffer(16, sizeof(uint));
+                    ComputeBuffer histogramLocal0CB = new ComputeBuffer(64, sizeof(uint));
+                    ComputeBuffer histogramLocal1CB = new ComputeBuffer(64, sizeof(uint));
                     int kernelClearHistogram = imageMeasurementComputeShader.FindKernel("CSClearHistogramBuffer");
                     int kernelGenerateHistogram = imageMeasurementComputeShader.FindKernel("CSGenerateHistogram");
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "Histogram0CB", histogram0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "Histogram1CB", histogram1CB);
-                    imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "Histogram2CB", histogram2CB);
+                    imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "HistogramLocal0CB", histogramLocal0CB);
+                    imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "HistogramLocal1CB", histogramLocal1CB);
+
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "Histogram0CB", histogram0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "Histogram1CB", histogram1CB);
-                    imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "Histogram2CB", histogram2CB);
-                    imageMeasurementComputeShader.SetTexture(kernelGenerateHistogram, "Texture", generatedTexturesRT[i]);
+                    imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "HistogramLocal0CB", histogramLocal0CB);
+                    imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "HistogramLocal1CB", histogramLocal1CB);
+                    imageMeasurementComputeShader.SetTexture(kernelGenerateHistogram, "Texture", population[i].GetResultTexture());
 
                     imageMeasurementComputeShader.Dispatch(kernelClearHistogram, 16, 1, 1);
-                    imageMeasurementComputeShader.Dispatch(kernelGenerateHistogram, imageResX / 8, imageResY / 8, 1);
+                    imageMeasurementComputeShader.Dispatch(kernelGenerateHistogram, imageResolution / 8, imageResolution / 8, 1);
 
                     uint[] histogram0Array = new uint[16];
                     histogram0CB.GetData(histogram0Array);
                     uint[] histogram1Array = new uint[16];
                     histogram1CB.GetData(histogram1Array);
-                    uint[] histogram2Array = new uint[16];
-                    histogram2CB.GetData(histogram2Array);
+                    uint[] histogramLocal0Array = new uint[64];
+                    histogramLocal0CB.GetData(histogramLocal0Array);
+                    uint[] histogramLocal1Array = new uint[64];
+                    histogramLocal1CB.GetData(histogramLocal1Array);
 
-                    debugTxt = "HistogramArray: ";
-                    for (int j = 0; j < histogram0Array.Length; j++) {
-                        debugTxt += j.ToString() + ": " + histogram0Array[j].ToString() + ", ";
-                    }
+                    //debugTxt = "HistogramArray: ";
+                    //for (int j = 0; j < histogram0Array.Length; j++) {
+                    //    debugTxt += j.ToString() + ": " + histogram0Array[j].ToString() + ", ";
+                    //}
                     //Debug.Log(debugTxt);
 
                     // Compare Histogram with reference img histogram to calculate score
                     float sqrDist = 0f;
                     for(int h = 0; h < histogram0Array.Length; h++) {
-                        float dist0 = (float)histogram0Array[h] - (float)refHistogram0Array[h];
-                        float dist1 = (float)histogram1Array[h] - (float)refHistogram1Array[h];
-                        float dist2 = (float)histogram2Array[h] - (float)refHistogram2Array[h];
+                        float dist0 = ((float)histogram0Array[h] - (float)refHistogram0Array[h]) / 4096f;
+                        float dist1 = ((float)histogram1Array[h] - (float)refHistogram1Array[h]) / 4096f;
+                        float dist2 = ((float)histogramLocal0Array[h] - (float)refHistogramLocal0Array[h]) / 4096;
+                        float dist3 = ((float)histogramLocal1Array[h] - (float)refHistogramLocal1Array[h]) / 4096;
 
-                        sqrDist += dist0 * dist0 + dist1 * dist1 + dist2 * dist2;
+                        sqrDist += dist0 * dist0 + dist1 * dist1 + dist2 * dist2 + dist3 * dist3;
                     }
                     //Debug.Log(sqrDist.ToString());
+                    
 
                     agentIndices[i] = i;
-                    fitnessScores[i] = sqrDist; // scoreArray[0]; // UnityEngine.Random.Range(0f, 1f); //
+                    fitnessScores[i] = sqrDist; // scoreArray[0];  UnityEngine.Random.Range(0f, 1f); //
 
                     histogram0CB.Release();
                     histogram1CB.Release();
-                    histogram2CB.Release();
+                    histogramLocal0CB.Release();
+                    histogramLocal1CB.Release();
                 }
 
                 // Rank Agents: (brute force algo)
@@ -391,19 +423,24 @@ public class NeuralNetGPUScript : MonoBehaviour {
 
                 // Store currentGen Weights in swapArray:
                 for(int i = 0; i < populationSize; i++) {
-                    Graphics.Blit(weightsRT[i], swapWeightsRT[i]);
+                    //Graphics.Blit(weightsRT[i], swapWeightsRT[i]);
+
+                    // copy pop into tempPop:
+                    tempPopulation[i].CopyWeightsFromTemplate(population[i]);
                 }
 
+                
                 // Crossover:
-                //RenderTexture[] newWeightsRT = new RenderTexture[populationSize];
                 for(int i = 0; i < populationSize; i++) {
                     if(i < (populationSize / 8)) {
-                        Graphics.Blit(swapWeightsRT[agentIndices[i]], weightsRT[i]);
+                        //Graphics.Blit(swapWeightsRT[agentIndices[i]], weightsRT[i]);
+                        population[i].CopyWeightsFromTemplate(tempPopulation[agentIndices[i]]);
                     }
                     else {
                         // Mutate:
+                        population[i].MutateGenome(tempPopulation[agentIndices[i % 8]], mutationRate, mutationSize);
 
-                        int kernelMutate = weightMutationComputeShader.FindKernel("CSMain");
+                        /*int kernelMutate = weightMutationComputeShader.FindKernel("CSMain");
                         weightMutationComputeShader.SetTexture(kernelMutate, "Source", swapWeightsRT[agentIndices[i % 8]]);
                         weightMutationComputeShader.SetTexture(kernelMutate, "Result", weightsRT[i]);
                         weightMutationComputeShader.SetInt("_Gen", curGeneration);
@@ -412,11 +449,12 @@ public class NeuralNetGPUScript : MonoBehaviour {
                         weightMutationComputeShader.SetFloat("_MutationRate", mutationRate);
                         weightMutationComputeShader.SetFloat("_MutationSize", mutationSize);
                         weightMutationComputeShader.Dispatch(kernelMutate, numInputsX, numInputsY, 1);
+                        */
                     }
                 }
-
-                Graphics.Blit(generatedTexturesRT[0], debugRT);
-                displayMat.SetTexture("_MainTex", debugRT);
+                //Graphics.Blit(generatedTexturesRT[0], debugRT);
+                //displayMat.SetTexture("_MainTex", debugRT);
+                
 
                 curGeneration++;
 
@@ -445,17 +483,19 @@ public class NeuralNetGPUScript : MonoBehaviour {
         curTimeStep = 0;
         RegenerateSourceNoiseTexture();
         for(int i = 0; i < populationSize; i++) {
-            Graphics.Blit(sourceNoiseTexture, sourceTexturesRT[i]);
+            //Graphics.Blit(sourceNoiseTexture, sourceTexturesRT[i]);
         }
     }
 
     private void Tick() {
-        //Debug.Log("Tick!");
+        Debug.Log("Tick!");
 
         for(int i = 0; i < populationSize; i++) {
 
             // Encapsulate this in a Function ( RT --> RT )
+            population[i].GenerateTexture(sourceNoiseTexture);
             
+            /*
             //  Iterate Through output neurons & calculate values using weightsMatrix
             int kernelFeedForward = agentBrainComputeShader.FindKernel("CSMain");
             agentBrainComputeShader.SetFloat("_Res", imageResX);
@@ -480,25 +520,26 @@ public class NeuralNetGPUScript : MonoBehaviour {
             agentBrainComputeShader.Dispatch(kernelFeedForward, imageResX, imageResY, 1);
 
             Graphics.Blit(generatedTexturesRT[i], sourceTexturesRT[i]);
+            */
         }
         
     }
 
     private void CreateAddressSourceNoiseTexture() {
-        sourceNoiseTexture = new Texture2D(imageResX, imageResY, TextureFormat.RGBAFloat, true);
+        sourceNoiseTexture = new Texture2D(imageResolution, imageResolution, TextureFormat.RGBAFloat, true);
     }
     private void RegenerateSourceNoiseTexture() {
         if(sourceNoiseTexture == null) {
             CreateAddressSourceNoiseTexture();
         }
         else {
-            sourceNoiseTexture.Resize(imageResX, imageResY);
+            sourceNoiseTexture.Resize(imageResolution, imageResolution);
         }
         sourceNoiseTexture.filterMode = FilterMode.Point;
-        for (int x = 0; x < imageResX; x++) {
-            for (int y = 0; y < imageResY; y++) {
+        for (int x = 0; x < imageResolution; x++) {
+            for (int y = 0; y < imageResolution; y++) {
                 //float val = UnityEngine.Random.Range(0f, 1f);
-                Color newColor = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
+                Color newColor = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
                 sourceNoiseTexture.SetPixel(x, y, newColor);
             }
         }
@@ -506,10 +547,10 @@ public class NeuralNetGPUScript : MonoBehaviour {
     }
     private void GenerateReferenceTexture() {
         if (referenceTexture == null) {
-            referenceTexture = new Texture2D(imageResX, imageResY, TextureFormat.RGBAFloat, true);
-            referenceTexture.Resize(imageResX, imageResY);
-            for (int x = 0; x < imageResX; x++) {
-                for (int y = 0; y < imageResY; y++) {
+            referenceTexture = new Texture2D(imageResolution, imageResolution, TextureFormat.RGBAFloat, true);
+            referenceTexture.Resize(imageResolution, imageResolution);
+            for (int x = 0; x < imageResolution; x++) {
+                for (int y = 0; y < imageResolution; y++) {
                     Color newColor = new Color(UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
                     referenceTexture.SetPixel(x, y, newColor);
                 }
@@ -547,13 +588,19 @@ public class NeuralNetGPUScript : MonoBehaviour {
     private void SetTexturesDisplayQuads() {
         if(displayWeights) {
             for (int i = 0; i < populationSize; i++) {
-                displayQuadMaterials[i].SetTexture("_MainTex", weightsRT[i]);
+                Material dispMat3D = new Material(displayMat3D);
+                displayQuadMaterials[i] = dispMat3D;
+                displayQuadsGO[i].GetComponent<MeshRenderer>().material = dispMat3D;
+                displayQuadMaterials[i].SetTexture("_MainTex", population[i].GetWeights());
                 //displayQuadMaterials[i].SetTexture("_MainTex", referenceTexture);
             }
         }
         else {
             for (int i = 0; i < populationSize; i++) {
-                displayQuadMaterials[i].SetTexture("_MainTex", generatedTexturesRT[i]);
+                Material dispMat = new Material(displayMat);
+                displayQuadMaterials[i] = dispMat;
+                displayQuadsGO[i].GetComponent<MeshRenderer>().material = dispMat;
+                displayQuadMaterials[i].SetTexture("_MainTex", population[i].GetResultTexture());
                 //displayQuadMaterials[i].SetTexture("_MainTex", referenceTexture);
             }
         }        
