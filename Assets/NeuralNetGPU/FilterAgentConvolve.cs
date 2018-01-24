@@ -11,12 +11,13 @@ public class FilterAgentConvolve : FilterAgentBase {
     private RenderTexture workingTextureA;  // input/output of each agent(filter) layer during forward pass
     private RenderTexture workingTextureB;  // input/output of each agent(filter) layer during forward pass
 
-    private int numLayers = 8;
+    private int numLayers = 12;
 
     int imageResolution;
-    int convolutionSize = 7;
+    int convolutionSize = 5;
 
-    private float initialWeightsMagnitude = 0f;
+    private float initialWeightsMagnitude = 0.2f;
+    private float initialWeightChance = 0.01f;
 
     public override void InitializeGenome(ComputeShader brainShader, ComputeShader weightMutationComputeShader, int resolution) {
 
@@ -45,13 +46,25 @@ public class FilterAgentConvolve : FilterAgentBase {
             // Initial Weights:
             //Texture3D weightsTex = new Texture3D(convolutionSize, convolutionSize, 1, TextureFormat.RGBAFloat, true);
             Color[] weightValues = new Color[convolutionSize * convolutionSize * numInputFilters];
-            for (int c = 0; c < weightValues.Length; c++) {                
-                float randomWeight0 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
-                float randomWeight1 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
-                float randomWeight2 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
-                float randomWeight3 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
+            for (int c = 0; c < weightValues.Length; c++) {   
+                float randCheck0 = UnityEngine.Random.Range(0f, 1f);
+                float weight0 = 0f;
+                float randCheck1 = UnityEngine.Random.Range(0f, 1f);
+                float weight1 = 0f;
+                float randCheck2 = UnityEngine.Random.Range(0f, 1f);
+                float weight2 = 0f;
+                float randCheck3 = UnityEngine.Random.Range(0f, 1f);
+                float weight3 = 0f;
+                if (randCheck0 < initialWeightChance)
+                    weight0 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
+                if (randCheck1 < initialWeightChance)
+                    weight1 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
+                if (randCheck2 < initialWeightChance)
+                    weight2 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
+                if (randCheck3 < initialWeightChance)
+                    weight3 = UnityEngine.Random.Range(-initialWeightsMagnitude, initialWeightsMagnitude);
 
-                weightValues[c] = new Color(randomWeight0, randomWeight1, randomWeight2, randomWeight3);
+                weightValues[c] = new Color(weight0, weight1, weight2, weight3);
             }
             ComputeBuffer weightsCB = new ComputeBuffer(convolutionSize * convolutionSize * numInputFilters, sizeof(float) * 4);
             weightsCB.SetData(weightValues);

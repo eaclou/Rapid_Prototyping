@@ -22,12 +22,20 @@ public class CellularAutomataBasic2D : MonoBehaviour {
             Graphics.Blit(initTex, mainRT);
         }
 
+        Tick();
+    }
+
+    private void Tick() {
         Graphics.Blit(mainRT, tempRT, blitMat, 0);
         Graphics.Blit(tempRT, mainRT);
     }
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+        if (Input.GetMouseButtonDown(0)) {
+            Debug.Log("Pressed left click.");
+            Tick();
+        }
+            
+    }
 }

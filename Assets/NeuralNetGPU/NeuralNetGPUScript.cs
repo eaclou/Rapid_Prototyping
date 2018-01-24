@@ -38,7 +38,7 @@ public class NeuralNetGPUScript : MonoBehaviour {
     public Material displayMat3D;
     public Shader blitShader;
 
-    private int populationSize = 24;
+    private int populationSize = 36;
     private FilterAgentConvolve[] population;
     private FilterAgentConvolve[] tempPopulation;
     
@@ -76,6 +76,13 @@ public class NeuralNetGPUScript : MonoBehaviour {
 
     public float mutationRate = 0.05f;
     public float mutationSize = 1f;
+    
+    public struct UInt4 {
+        uint x;
+        uint y;
+        uint z;
+        uint w;
+    }
 
     // Use this for initialization
     void Start () {
@@ -291,17 +298,20 @@ public class NeuralNetGPUScript : MonoBehaviour {
                 
                 ComputeBuffer refHistogram0CB = new ComputeBuffer(16, sizeof(uint));
                 ComputeBuffer refHistogram1CB = new ComputeBuffer(16, sizeof(uint));
-                ComputeBuffer refHistogramLocal0CB = new ComputeBuffer(64, sizeof(uint));
-                ComputeBuffer refHistogramLocal1CB = new ComputeBuffer(64, sizeof(uint));
+                ComputeBuffer refHistogramColorCB = new ComputeBuffer(16, sizeof(uint) * 4);
+                ComputeBuffer refHistogramLocal0CB = new ComputeBuffer(64, sizeof(uint) * 4);
+                ComputeBuffer refHistogramLocal1CB = new ComputeBuffer(64, sizeof(uint) * 4);
                 int kernelRefClearHistogram = imageMeasurementComputeShader.FindKernel("CSClearHistogramBuffer");
                 int kernelRefGenerateHistogram = imageMeasurementComputeShader.FindKernel("CSGenerateHistogram");
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "Histogram0CB", refHistogram0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "Histogram1CB", refHistogram1CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "HistogramColorCB", refHistogramColorCB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "HistogramLocal0CB", refHistogramLocal0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefClearHistogram, "HistogramLocal1CB", refHistogramLocal1CB);
 
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "Histogram0CB", refHistogram0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "Histogram1CB", refHistogram1CB);
+                imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "HistogramColorCB", refHistogramColorCB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "HistogramLocal0CB", refHistogramLocal0CB);
                 imageMeasurementComputeShader.SetBuffer(kernelRefGenerateHistogram, "HistogramLocal1CB", refHistogramLocal1CB);
                 imageMeasurementComputeShader.SetTexture(kernelRefGenerateHistogram, "Texture", referenceTexture);
@@ -315,21 +325,24 @@ public class NeuralNetGPUScript : MonoBehaviour {
                 uint[] refHistogram1Array = new uint[16];
                 refHistogram1CB.GetData(refHistogram1Array);
                 refHistogram1CB.Release();
-                uint[] refHistogramLocal0Array = new uint[64];
+                uint[] refHistogramColorArray = new uint[64];
+                refHistogramColorCB.GetData(refHistogramColorArray);
+                refHistogramColorCB.Release();
+                uint[] refHistogramLocal0Array = new uint[256];
                 refHistogramLocal0CB.GetData(refHistogramLocal0Array);
                 refHistogramLocal0CB.Release();
-                uint[] refHistogramLocal1Array = new uint[64];
+                uint[] refHistogramLocal1Array = new uint[256];
                 refHistogramLocal1CB.GetData(refHistogramLocal1Array);
                 refHistogramLocal1CB.Release();
                 //
                 /*
                 string debugTxt = "refHistogramLocal0Array: ";
-                for (int j = 0; j < refHistogramLocal0Array.Length; j++) {
-                    debugTxt += j.ToString() + ": " + refHistogramLocal0Array[j].ToString() + ", ";
+                for (int j = 0; j < refHistogramLocal0Array.Length / 4; j++) {
+                    debugTxt += j.ToString() + ": " + refHistogramLocal0Array[j * 4].ToString() + ", " + refHistogramLocal0Array[j * 4 + 1].ToString() + ", " + refHistogramLocal0Array[j * 4 + 2].ToString() + ", " + refHistogramLocal0Array[j * 4 + 3].ToString() + "\n";
                 }
                 Debug.Log(debugTxt);
-                //
-                */
+                //*/
+                
 
                 // Collect scores:
                 for (int i = 0; i < populationSize; i++) {
@@ -344,17 +357,20 @@ public class NeuralNetGPUScript : MonoBehaviour {
 
                     ComputeBuffer histogram0CB = new ComputeBuffer(16, sizeof(uint));
                     ComputeBuffer histogram1CB = new ComputeBuffer(16, sizeof(uint));
-                    ComputeBuffer histogramLocal0CB = new ComputeBuffer(64, sizeof(uint));
-                    ComputeBuffer histogramLocal1CB = new ComputeBuffer(64, sizeof(uint));
+                    ComputeBuffer histogramColorCB = new ComputeBuffer(16, sizeof(uint) * 4);
+                    ComputeBuffer histogramLocal0CB = new ComputeBuffer(64, sizeof(uint) * 4);
+                    ComputeBuffer histogramLocal1CB = new ComputeBuffer(64, sizeof(uint) * 4);
                     int kernelClearHistogram = imageMeasurementComputeShader.FindKernel("CSClearHistogramBuffer");
                     int kernelGenerateHistogram = imageMeasurementComputeShader.FindKernel("CSGenerateHistogram");
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "Histogram0CB", histogram0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "Histogram1CB", histogram1CB);
+                    imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "HistogramColorCB", histogramColorCB);
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "HistogramLocal0CB", histogramLocal0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelClearHistogram, "HistogramLocal1CB", histogramLocal1CB);
 
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "Histogram0CB", histogram0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "Histogram1CB", histogram1CB);
+                    imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "HistogramColorCB", histogramColorCB);
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "HistogramLocal0CB", histogramLocal0CB);
                     imageMeasurementComputeShader.SetBuffer(kernelGenerateHistogram, "HistogramLocal1CB", histogramLocal1CB);
                     imageMeasurementComputeShader.SetTexture(kernelGenerateHistogram, "Texture", population[i].GetResultTexture());
@@ -366,9 +382,11 @@ public class NeuralNetGPUScript : MonoBehaviour {
                     histogram0CB.GetData(histogram0Array);
                     uint[] histogram1Array = new uint[16];
                     histogram1CB.GetData(histogram1Array);
-                    uint[] histogramLocal0Array = new uint[64];
+                    uint[] histogramColorArray = new uint[64];
+                    histogramColorCB.GetData(histogramColorArray);
+                    uint[] histogramLocal0Array = new uint[256];
                     histogramLocal0CB.GetData(histogramLocal0Array);
-                    uint[] histogramLocal1Array = new uint[64];
+                    uint[] histogramLocal1Array = new uint[256];
                     histogramLocal1CB.GetData(histogramLocal1Array);
 
                     //debugTxt = "HistogramArray: ";
@@ -376,25 +394,42 @@ public class NeuralNetGPUScript : MonoBehaviour {
                     //    debugTxt += j.ToString() + ": " + histogram0Array[j].ToString() + ", ";
                     //}
                     //Debug.Log(debugTxt);
+                    //debugTxt = "histogramLocal0Array: ";
+                    //for (int j = 0; j < histogramLocal0Array.Length / 4; j++) {
+                    //    debugTxt += j.ToString() + ": " + histogramLocal0Array[j * 4].ToString() + ", " + histogramLocal0Array[j * 4 + 1].ToString() + ", " + histogramLocal0Array[j * 4 + 2].ToString() + ", " + histogramLocal0Array[j * 4 + 3].ToString() + "\n";
+                    //}
+                   // Debug.Log(debugTxt);
 
                     // Compare Histogram with reference img histogram to calculate score
                     float sqrDist = 0f;
                     for(int h = 0; h < histogram0Array.Length; h++) {
-                        float dist0 = ((float)histogram0Array[h] - (float)refHistogram0Array[h]) / 4096f;
-                        float dist1 = ((float)histogram1Array[h] - (float)refHistogram1Array[h]) / 4096f;
-                        float dist2 = ((float)histogramLocal0Array[h] - (float)refHistogramLocal0Array[h]) / 4096;
-                        float dist3 = ((float)histogramLocal1Array[h] - (float)refHistogramLocal1Array[h]) / 4096;
-
-                        sqrDist += dist0 * dist0 + dist1 * dist1 + dist2 * dist2 + dist3 * dist3;
+                        float dist = ((float)histogram0Array[h] - (float)refHistogram0Array[h]) / 4096f;
+                        sqrDist += dist * dist;
+                    }
+                    for (int h = 0; h < histogram1Array.Length; h++) {
+                        float dist = ((float)histogram1Array[h] - (float)refHistogram1Array[h]) / 4096f;
+                        sqrDist += dist * dist;
+                    }
+                    for (int h = 0; h < histogramColorArray.Length; h++) {
+                        //float dist = ((float)histogramColorArray[h] - (float)refHistogramColorArray[h]) / 4096f;
+                        //sqrDist += dist * dist;
+                    }
+                    for (int h = 0; h < histogramLocal0Array.Length; h++) {
+                        float dist = ((float)histogramLocal0Array[h] - (float)refHistogramLocal0Array[h]) / 4096f;
+                        sqrDist += dist * dist;
+                    }
+                    for (int h = 0; h < histogramLocal1Array.Length; h++) {
+                        float dist = ((float)histogramLocal1Array[h] - (float)refHistogramLocal1Array[h]) / 4096f;
+                        sqrDist += dist * dist;
                     }
                     //Debug.Log(sqrDist.ToString());
-                    
 
                     agentIndices[i] = i;
                     fitnessScores[i] = sqrDist; // scoreArray[0];  UnityEngine.Random.Range(0f, 1f); //
 
                     histogram0CB.Release();
                     histogram1CB.Release();
+                    histogramColorCB.Release();
                     histogramLocal0CB.Release();
                     histogramLocal1CB.Release();
                 }

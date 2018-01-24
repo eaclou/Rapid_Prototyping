@@ -7,19 +7,29 @@
 
 Texture2D<float4> Texture;
 RWStructuredBuffer<uint> Histogram0CB;
-RWStructuredBuffer<uint> Histogram1CB; 
+RWStructuredBuffer<uint> Histogram1CB;
+RWStructuredBuffer<uint4> HistogramColorCB;
 RWStructuredBuffer<uint4> HistogramLocal0CB;
 RWStructuredBuffer<uint4> HistogramLocal1CB;
 
 SamplerState samplerPointRepeat;
+
+
 
 [numthreads(1,1,1)]
 void CSClearHistogramBuffer (uint3 id : SV_DispatchThreadID)
 {
 	Histogram0CB[id.x] = 0;
 	Histogram1CB[id.x] = 0;
-	HistogramLocal0CB[id.x] = 0;
-	HistogramLocal1CB[id.x] = 0;
+	HistogramColorCB[id.x] = 0;
+	HistogramLocal0CB[id.x * 4 + 0] = 0;
+	HistogramLocal1CB[id.x * 4 + 0] = 0;
+	HistogramLocal0CB[id.x * 4 + 1] = 0;
+	HistogramLocal1CB[id.x * 4 + 1] = 0;
+	HistogramLocal0CB[id.x * 4 + 2] = 0;
+	HistogramLocal1CB[id.x * 4 + 2] = 0;
+	HistogramLocal0CB[id.x * 4 + 3] = 0;
+	HistogramLocal1CB[id.x * 4 + 3] = 0;
 }
 
 
@@ -35,10 +45,24 @@ void CSGenerateHistogram (uint3 id : SV_DispatchThreadID)
 	float pixelSize = 1.0 / 64.0;
 
 	float4 pixelValue0 = Texture.SampleLevel(samplerPointRepeat, centerUV, 0);
-	float4 pixelValue1 = Texture.SampleLevel(samplerPointRepeat, centerUV, 1);
+	float4 pixelValue1 = Texture.SampleLevel(samplerPointRepeat, centerUV, 2);
 
 	float avg0 = (pixelValue0.r + pixelValue0.g + pixelValue0.b) / 3.0;
 	float avg1 = (pixelValue1.r + pixelValue1.g + pixelValue1.b) / 3.0;
+
+	//%%%%%%% COLOR HISTO %%%%%%%
+
+	uint redBucket = (uint)floor(15.99 * pixelValue0.r); //uint4(255.0 * InputTexture[id.xy]);
+	uint greenBucket = (uint)floor(15.99 * pixelValue0.g);
+	uint blueBucket = (uint)floor(15.99 * pixelValue0.b);
+	uint alphaBucket = (uint)floor(15.99 * pixelValue0.a);
+
+	InterlockedAdd(HistogramColorCB[redBucket].r, 1);
+	InterlockedAdd(HistogramColorCB[greenBucket].g, 1); 
+	InterlockedAdd(HistogramColorCB[blueBucket].b, 1); 
+	InterlockedAdd(HistogramColorCB[alphaBucket].a, 1);
+
+	//%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	uint col0 = (uint)floor(15.99 * avg0);
 	uint col1 = (uint)floor(15.99 * avg1);
@@ -47,28 +71,28 @@ void CSGenerateHistogram (uint3 id : SV_DispatchThreadID)
 	InterlockedAdd(Histogram1CB[col1], 1);
 
 	// ^&$%^&$% NEIGHBORS !!! #$%@$#%@
-	uint xCoord0 = (uint)floor(3.99 * avg0);   // centerPixel Bucket
+	uint xCoord0 = (uint)floor(7.99 * avg0);   // centerPixel Bucket
 		
 	// TOP:::
-	float4 pixelValueTop0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, pixelSize), 0);
+	float4 pixelValueTop0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, pixelSize), 1);
 	float topVal0 = (pixelValueTop0.r + pixelValueTop0.g + pixelValueTop0.b) / 3.0;
-	uint yCoordTop0 = (uint)floor(3.99 * topVal0);
-	uint topBufferIndex0 = yCoordTop0 * 4 + xCoord0;
+	uint yCoordTop0 = (uint)floor(7.99 * topVal0);
+	uint topBufferIndex0 = yCoordTop0 * 8 + xCoord0;
 	// RIGHT:::
-	float4 pixelValueRight0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(pixelSize, 0), 0);
+	float4 pixelValueRight0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(pixelSize, 0), 1);
 	float rightVal0 = (pixelValueRight0.r + pixelValueRight0.g + pixelValueRight0.b) / 3.0;
-	uint yCoordRight0 = (uint)floor(3.99 * rightVal0);
-	uint rightBufferIndex0 = yCoordRight0 * 4 + xCoord0;
+	uint yCoordRight0 = (uint)floor(7.99 * rightVal0);
+	uint rightBufferIndex0 = yCoordRight0 * 8 + xCoord0;
 	// BOTTOM:::
-	float4 pixelValueBottom0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, -pixelSize), 0);
+	float4 pixelValueBottom0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, -pixelSize), 1);
 	float bottomVal0 = (pixelValueBottom0.r + pixelValueBottom0.g + pixelValueBottom0.b) / 3.0;
-	uint yCoordBottom0 = (uint)floor(3.99 * bottomVal0);
-	uint bottomBufferIndex0 = yCoordBottom0 * 4 + xCoord0;
+	uint yCoordBottom0 = (uint)floor(7.99 * bottomVal0);
+	uint bottomBufferIndex0 = yCoordBottom0 * 8 + xCoord0;
 	// LEFT:::
-	float4 pixelValueLeft0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(-pixelSize, 0), 0);
+	float4 pixelValueLeft0 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(-pixelSize, 0), 1);
 	float leftVal0 = (pixelValueLeft0.r + pixelValueLeft0.g + pixelValueLeft0.b) / 3.0;
-	uint yCoordLeft0 = (uint)floor(3.99 * leftVal0);
-	uint leftBufferIndex0 = yCoordLeft0 * 4 + xCoord0;
+	uint yCoordLeft0 = (uint)floor(7.99 * leftVal0);
+	uint leftBufferIndex0 = yCoordLeft0 * 8 + xCoord0;
 
 	InterlockedAdd(HistogramLocal0CB[topBufferIndex0].x, 1);  // x == top,  y == right,  z == bottom,  w == left
 	InterlockedAdd(HistogramLocal0CB[rightBufferIndex0].y, 1);  // x == top,  y == right,  z == bottom,  w == left
@@ -77,28 +101,28 @@ void CSGenerateHistogram (uint3 id : SV_DispatchThreadID)
 
 	// Mip1:
 
-	uint xCoord1 = (uint)floor(3.99 * avg1);   // centerPixel Bucket
+	uint xCoord1 = (uint)floor(7.99 * avg1);   // centerPixel Bucket
 		
 	// TOP:::
-	float4 pixelValueTop1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, pixelSize), 1);
+	float4 pixelValueTop1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, pixelSize), 3);
 	float topVal1 = (pixelValueTop1.r + pixelValueTop1.g + pixelValueTop1.b) / 3.0;
-	uint yCoordTop1 = (uint)floor(3.99 * topVal1);
-	uint topBufferIndex1 = yCoordTop1 * 4 + xCoord1;
+	uint yCoordTop1 = (uint)floor(7.99 * topVal1);
+	uint topBufferIndex1 = yCoordTop1 * 8 + xCoord1;
 	// RIGHT:::
-	float4 pixelValueRight1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(pixelSize, 0), 1);
+	float4 pixelValueRight1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(pixelSize, 0), 3);
 	float rightVal1 = (pixelValueRight1.r + pixelValueRight1.g + pixelValueRight1.b) / 3.0;
-	uint yCoordRight1 = (uint)floor(3.99 * rightVal1);
-	uint rightBufferIndex1 = yCoordRight1 * 4 + xCoord1;
+	uint yCoordRight1 = (uint)floor(7.99 * rightVal1);
+	uint rightBufferIndex1 = yCoordRight1 * 8 + xCoord1;
 	// BOTTOM:::
-	float4 pixelValueBottom1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, -pixelSize), 1);
+	float4 pixelValueBottom1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(0, -pixelSize), 3);
 	float bottomVal1 = (pixelValueBottom1.r + pixelValueBottom1.g + pixelValueBottom1.b) / 3.0;
-	uint yCoordBottom1 = (uint)floor(3.99 * bottomVal1);
-	uint bottomBufferIndex1 = yCoordBottom1 * 4 + xCoord1;
+	uint yCoordBottom1 = (uint)floor(7.99 * bottomVal1);
+	uint bottomBufferIndex1 = yCoordBottom1 * 8 + xCoord1;
 	// LEFT:::
-	float4 pixelValueLeft1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(-pixelSize, 0), 1);
+	float4 pixelValueLeft1 = Texture.SampleLevel(samplerPointRepeat, centerUV + float2(-pixelSize, 0), 3);
 	float leftVal1 = (pixelValueLeft1.r + pixelValueLeft1.g + pixelValueLeft1.b) / 3.0;
-	uint yCoordLeft1 = (uint)floor(3.99 * leftVal1);
-	uint leftBufferIndex1 = yCoordLeft1 * 4 + xCoord1;
+	uint yCoordLeft1 = (uint)floor(7.99 * leftVal1);
+	uint leftBufferIndex1 = yCoordLeft1 * 8 + xCoord1;
 
 	InterlockedAdd(HistogramLocal1CB[topBufferIndex1].x, 1);  // x == top,  y == right,  z == bottom,  w == left
 	InterlockedAdd(HistogramLocal1CB[rightBufferIndex1].y, 1);  // x == top,  y == right,  z == bottom,  w == left
