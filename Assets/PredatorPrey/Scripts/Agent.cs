@@ -6,7 +6,8 @@ public class Agent : MonoBehaviour {
 
     //public AgentGenome genome;
     public Brain brain;
-    
+
+    public TestModule testModule;
     //[System.NonSerialized]
     //public List<HealthModule> healthModuleList;
     //[System.NonSerialized]
@@ -20,6 +21,8 @@ public class Agent : MonoBehaviour {
     }
 
     public void MapNeuronToModule(NID nid, Neuron neuron) {
+        testModule.MapNeuron(nid, neuron);
+        
         /*
         for (int i = 0; i < healthModuleList.Count; i++) {
             healthModuleList[i].MapNeuron(nid, neuron);
@@ -37,12 +40,31 @@ public class Agent : MonoBehaviour {
             neuron.previousValue = 0f;
         }
         */
+
+        /*
+        public void MapNeuron(NID nid, Neuron neuron) {
+            if (inno == nid.moduleID) {
+                if (nid.neuronID == 0) {
+                    neuron.currentValue = healthSensor;
+                    neuron.neuronType = NeuronGenome.NeuronType.In;
+                }
+                if (nid.neuronID == 1) {
+                    neuron.currentValue = takingDamage;
+                    neuron.neuronType = NeuronGenome.NeuronType.In;
+                }
+            }
+        }
+         * */
     }
 
     public void TickBrain() {        
         brain.BrainMasterFunction();
     }
-    public void RunModules(int timeStep, Environment currentEnvironment) {        
+    public void RunModules(int timeStep, Environment currentEnvironment) {
+        testModule.Tick();
+        Vector3 agentPos = new Vector3(testModule.posX[0], testModule.posY[0], 0f);
+        this.transform.localPosition = agentPos;
+
         //for (int i = 0; i < healthModuleList.Count; i++) {
         //    healthModuleList[i].Tick();
         //}        
@@ -50,7 +72,11 @@ public class Agent : MonoBehaviour {
         //}        
     }
 
-    public void InitializeModules(AgentGenome genome, Agent agent) {
+    public void InitializeModules(AgentGenome genome, Agent agent, StartPositionGenome startPos) {
+        testModule = new TestModule();
+        testModule.Initialize(genome.bodyGenome.testModuleGenome, agent, startPos);
+
+        
         /*
         healthModuleList = new List<HealthModule>();        
         valueList = new List<InputValue>();
@@ -71,11 +97,11 @@ public class Agent : MonoBehaviour {
         */
     }
 
-    public void InitializeAgentFromTemplate(AgentGenome genome) {
+    public void InitializeAgentFromTemplate(AgentGenome genome, StartPositionGenome startPos) {
         // Initialize Modules --
         //Debug.Log("Agent Initialize Modules() segment count: " + segmentList.Count.ToString() + ", visCount: " + visibleObjectList.Count.ToString());
         // -- Setup that used to be done in the constructors
-        InitializeModules(genome, this);
+        InitializeModules(genome, this, startPos);
 
         // Visible/Non-Visible:
         //if (isVisible) {

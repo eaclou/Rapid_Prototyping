@@ -17,13 +17,13 @@ public class EvaluationManager {
     public EvaluationInstance exhibitionInstance;
     //public ExhibitionParticleCurves exhibitionParticleCurves;
 
-    private int maxInstancesX = 3;
-    private int maxInstancesY = 3;
-    private int maxInstancesZ = 3;
+    private int maxInstancesX = 5;
+    private int maxInstancesY = 5;
+    private int maxInstancesZ = 5;
     private float instanceBufferX = 2.5f;
     private float instanceBufferY = 2.5f;
     private float instanceBufferZ = 2.5f;
-    public int maxTimeStepsDefault = 16;
+    public int maxTimeStepsDefault = 128;
 
 
     public EvaluationManager() {

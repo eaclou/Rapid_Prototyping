@@ -4,7 +4,7 @@ using UnityEngine;
 
 [System.Serializable]
 public class PlayerPopulation {
-
+    public int index;
 
     public List<AgentGenome> agentGenomeList;  // Primary genome population
 
@@ -15,7 +15,7 @@ public class PlayerPopulation {
 
     public int popSize;
     //public int numBaseline;
-    //public FitnessManager fitnessManager; // keeps track of performance data from this population's agents
+    public FitnessManager fitnessManager; // keeps track of performance data from this population's agents
     public TrainingSettingsManager trainingSettingsManager;  // keeps track of core algorithm settings, like mutation rate, thoroughness, etc.
 
     public bool isTraining = true;
@@ -26,7 +26,9 @@ public class PlayerPopulation {
     public BodyGenome bodyGenomeTemplate;
 
     // Representative system will be expanded later - for now, just defaults to Top # of performers
-    public PlayerPopulation(BodyGenome bodyTemplate, int numGenomes, int numReps) {
+    public PlayerPopulation(int index, BodyGenome bodyTemplate, int numGenomes, int numReps) {
+        this.index = index;
+        
         // Re-Factor:
         bodyGenomeTemplate = new BodyGenome();
         bodyGenomeTemplate.CopyBodyGenomeFromTemplate(bodyTemplate);
@@ -43,7 +45,7 @@ public class PlayerPopulation {
         for (int j = 0; j < numGenomes; j++) {
             AgentGenome agentGenome = new AgentGenome(j);
             agentGenome.InitializeBodyGenomeFromTemplate(bodyGenomeTemplate);
-            agentGenome.InitializeRandomBrainFromCurrentBody(0.02f);
+            agentGenome.InitializeRandomBrainFromCurrentBody(1f);
             agentGenomeList.Add(agentGenome);
         }
         //RepopulateBaselineGenomes();
@@ -54,14 +56,14 @@ public class PlayerPopulation {
         ResetRepresentativesList();
         historicGenomePool.Add(agentGenomeList[0]); // init
 
-        /*
+        
         fitnessManager = new FitnessManager();
-        SetUpDefaultFitnessComponents(challengeType, fitnessManager);
-        fitnessManager.ResetHistoricalData();
-        fitnessManager.ResetCurrentHistoricalDataLists();
+        SetUpDefaultFitnessComponents(fitnessManager, this.index);
+        //fitnessManager.ResetHistoricalData();
+        //fitnessManager.ResetCurrentHistoricalDataLists();
         fitnessManager.InitializeForNewGeneration(agentGenomeList.Count);
-        */
-        trainingSettingsManager = new TrainingSettingsManager(0.0075f, 0.075f, 0.1f, 0.005f);
+        
+        trainingSettingsManager = new TrainingSettingsManager(0.15f, 0.35f, 0.0f, 0.0f);
     }
 
     /*public void RepopulateBaselineGenomes() {
@@ -84,19 +86,21 @@ public class PlayerPopulation {
         }
     }*/
 
-    /*private void SetUpDefaultFitnessComponents(FitnessManager fitnessManager) {
+    private void SetUpDefaultFitnessComponents(FitnessManager fitnessManager, int index) {
         
-        FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 0.1f, true);
+        FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 0.0f, true);
         fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat1);
-        FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.Health, FitnessComponentMeasure.Avg, 0.5f, true);
-        fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat2);
-        FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DamageInflicted, FitnessComponentMeasure.Avg, 1f, true);
-        fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat3);
-        FitnessComponentDefinition fitCompCombat4 = new FitnessComponentDefinition(FitnessComponentType.WinLoss, FitnessComponentMeasure.Avg, 1f, true);
-        fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat4);         
-
-        fitnessManager.SetPendingFitnessListFromMaster(); // make pending list a copy of the primary
-    }*/
+        if(index == 0) {
+            FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 1f, false);
+            fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat2);
+        }
+        else {
+            FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 1f, true);
+            fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat3);
+        }
+        
+        //fitnessManager.SetPendingFitnessListFromMaster(); // make pending list a copy of the primary
+    }
 
     public void ResetRepresentativesList() {
         if (representativeGenomeList == null) {

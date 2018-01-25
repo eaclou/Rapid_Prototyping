@@ -7,7 +7,7 @@ public class BodyGenome {
 
     //public AgentBodyType bodyType;
     // Modules:
-    
+    public TestModuleGenome testModuleGenome;
     //public List<HealthGenome> healthModuleList;
     //public List<OscillatorGenome> oscillatorInputList;
     //public List<ValueInputGenome> valueInputList;
@@ -17,10 +17,33 @@ public class BodyGenome {
     }
 
     public void InitializeGenomeAsDefault() {
-
+        testModuleGenome = new TestModuleGenome(0, 0);
     }
 
+    public void InitializeBrainGenome(List<NeuronGenome> neuronList) {
+
+        testModuleGenome.InitializeBrainGenome(neuronList);
+
+        // Centralized neuron lists instead of based on modules:
+        // Manually set inno/neuron ID's in function args:
+        /*
+        NeuronGenome constant = new NeuronGenome(NeuronGenome.NeuronType.In, 0, 0);
+        NeuronGenome posX = new NeuronGenome(NeuronGenome.NeuronType.In, 1, 0);
+        NeuronGenome posY = new NeuronGenome(NeuronGenome.NeuronType.In, 1, 1);
+        NeuronGenome moveX = new NeuronGenome(NeuronGenome.NeuronType.Out, 2, 0);
+        NeuronGenome moveY = new NeuronGenome(NeuronGenome.NeuronType.Out, 2, 1);
+        neuronList.Add(constant);
+        neuronList.Add(posX);
+        neuronList.Add(posY);
+        neuronList.Add(moveX);
+        neuronList.Add(moveY);
+        */
+    }
+
+
     public void CopyBodyGenomeFromTemplate(BodyGenome templateGenome) {
+        testModuleGenome = new TestModuleGenome(templateGenome.testModuleGenome);
+
         /*
         // This method creates a clone of the provided BodyGenome - should have no shared references!!!
         bodyType = templateGenome.bodyType;

@@ -16,7 +16,7 @@ public class EnvironmentPopulation {
 
     public int popSize;
     //public int numBaseline;
-    //public FitnessManager fitnessManager; // keeps track of performance data from this population's agents
+    public FitnessManager fitnessManager; // keeps track of performance data from this population's agents
     public TrainingSettingsManager trainingSettingsManager;  // keeps track of core algorithm settings, like mutation rate, thoroughness, etc.
     public bool isTraining = true;
     public int numPerformanceReps = 1;
@@ -52,23 +52,22 @@ public class EnvironmentPopulation {
         ResetRepresentativesList();
         historicGenomePool.Add(environmentGenomeList[0]); // init               
 
-        //fitnessManager = new FitnessManager();
-        //SetUpDefaultFitnessComponents(challengeType, fitnessManager);
+        fitnessManager = new FitnessManager();
+        SetUpDefaultFitnessComponents(fitnessManager);
         //fitnessManager.ResetHistoricalData();
-        //fitnessManager.InitializeForNewGeneration(environmentGenomeList.Count);
+        fitnessManager.InitializeForNewGeneration(environmentGenomeList.Count);
 
         trainingSettingsManager = new TrainingSettingsManager(0.25f, 0.05f, 0f, 0f);
     }
 
-    /*
+    
     private void SetUpDefaultFitnessComponents(FitnessManager fitnessManager) {
         
         FitnessComponentDefinition newComponentCombat = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 1f, true);
         fitnessManager.fitnessComponentDefinitions.Add(newComponentCombat);
             
-        fitnessManager.SetPendingFitnessListFromMaster(); // make pending list a copy of the primary
+        //fitnessManager.SetPendingFitnessListFromMaster(); // make pending list a copy of the primary
     }
-    */
 
     public void ResetRepresentativesList() {
 

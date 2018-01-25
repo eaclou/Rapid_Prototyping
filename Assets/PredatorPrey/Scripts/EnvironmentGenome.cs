@@ -23,8 +23,10 @@ public class EnvironmentGenome {
         arenaBounds = new Vector3(40f, 40f, 40f);
 
         agentStartPositionsList = new List<StartPositionGenome>();
-        StartPositionGenome player1Start = new StartPositionGenome(new Vector3(0f, 0f, 0f), Quaternion.identity);
+        StartPositionGenome player1Start = new StartPositionGenome(new Vector3(0f, -5f, 0f), Quaternion.identity);
+        StartPositionGenome player2Start = new StartPositionGenome(new Vector3(0f, 5f, 0f), Quaternion.identity);
         agentStartPositionsList.Add(player1Start);
+        agentStartPositionsList.Add(player2Start);
     }
     public void InitializeRandomGenomeFromTemplate(EnvironmentGenome templateGenome) {
         CopyGenomeFromTemplate(templateGenome);        

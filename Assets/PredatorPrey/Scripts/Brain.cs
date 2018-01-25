@@ -10,6 +10,7 @@ public class Brain {
 
 
     public Brain(BrainGenome genome, Agent agent) {
+        //Debug.Log("Brain() genome: " + genome.bodyNeuronList.Count.ToString());
         RebuildBrain(genome, agent);
     }
 

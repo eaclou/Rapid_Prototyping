@@ -10,7 +10,7 @@ public class EvaluationInstance : MonoBehaviour {
     public EvaluationTicket currentEvalTicket;
     private TeamsConfig teamsConfig;
     
-    //public FitnessComponentEvaluationGroup fitnessComponentEvaluationGroup;
+    public FitnessComponentEvaluationGroup fitnessComponentEvaluationGroup;
 
     public Agent[] currentAgentsArray;
     public float[][] agentGameScoresArray;
@@ -133,14 +133,17 @@ public class EvaluationInstance : MonoBehaviour {
 
             // Create Agent Base Body:
             //GameObject agentGO = Instantiate(Resources.Load(AgentBodyGenomeTemplate.GetAgentBodyTypeURL(currentEvalTicket.agentGenomesList[i].bodyGenome.bodyType))) as GameObject;
-            GameObject agentGO = new GameObject("Agent_" + currentEvalTicket.agentGenomesList[i].index.ToString());
+            //GameObject agentGO = new GameObject("Agent_" + currentEvalTicket.agentGenomesList[i].index.ToString());
+            GameObject agentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            agentGO.name = "Player[" + i.ToString() + "] Agent[" + currentEvalTicket.agentGenomesList[i].index.ToString() + "]";
             agentGO.transform.parent = gameObject.transform;
             agentGO.transform.localPosition = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartPosition;
             agentGO.transform.localRotation = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartRotation;
+            agentGO.GetComponent<Collider>().enabled = false;
             Agent agentScript = agentGO.AddComponent<Agent>();            
             agentScript.isVisible = visible;
 
-            agentScript.InitializeAgentFromTemplate(currentEvalTicket.agentGenomesList[i]);
+            agentScript.InitializeAgentFromTemplate(currentEvalTicket.agentGenomesList[i], currentEvalTicket.environmentGenome.agentStartPositionsList[i]);
 
             currentAgentsArray[i] = agentScript;
         }
@@ -161,7 +164,7 @@ public class EvaluationInstance : MonoBehaviour {
         }
         else {
             // Fitness Crap only if NON-exhibition!:
-            /*
+            
             FitnessManager fitnessManager;
             int genomeIndex;
             if (currentEvalTicket.focusPopIndex == 0) {  // environment
@@ -178,7 +181,7 @@ public class EvaluationInstance : MonoBehaviour {
             fitnessComponentEvaluationGroup.CreateFitnessComponentEvaluationGroup(fitnessManager, genomeIndex);
             //Debug.Log("currentEvalTicket.focusPopIndex: " + currentEvalTicket.focusPopIndex.ToString() + ", index: " + currentEvalTicket.genomeIndices[currentEvalTicket.focusPopIndex].ToString());
             HookUpFitnessComponents();
-            */
+            
         }
     }
     private void CreateEnvironment() {
@@ -208,6 +211,16 @@ public class EvaluationInstance : MonoBehaviour {
     }
 
     public void HookUpModules() {
+        for(int p = 0; p < currentAgentsArray.Length; p++) {
+            for(int e = 0; e < currentAgentsArray.Length; e++) {
+                if(e != p) {  // not vs self:
+                    currentAgentsArray[p].testModule.enemyTransform = currentAgentsArray[e].transform;
+                    //currentAgentsArray[p].testModule.enemyPosX[0] = currentAgentsArray[e].testModule.posX[0] - currentAgentsArray[p].testModule.posX[0];
+                    //currentAgentsArray[p].testModule.enemyPosY[0] = currentAgentsArray[e].testModule.posY[0] - currentAgentsArray[p].testModule.posY[0];
+                }
+            }
+        }
+        
         /*switch (challengeType) {
             case Challenge.Type.Test:
                 for (int i = 0; i < currentAgentsArray[0].targetSensorList.Count; i++) {
@@ -244,71 +257,28 @@ public class EvaluationInstance : MonoBehaviour {
     }
     public void HookUpFitnessComponents() {
         // Implementing Fitness Later Differently
-        /*
+        
         for (int i = 0; i < fitnessComponentEvaluationGroup.fitCompList.Count; i++) {
             int populationIndex = 0; // defaults to player1
             if (currentEvalTicket.focusPopIndex != 0) {  // if environment is not the focus Pop, set correct playerIndex:
                 populationIndex = currentEvalTicket.focusPopIndex - 1;
             }
             switch (fitnessComponentEvaluationGroup.fitCompList[i].sourceDefinition.type) {
-                case FitnessComponentType.DistanceToTargetSquared:
-                    //FitCompDistanceToTargetSquared fitCompDistToTargetSquared = (FitCompDistanceToTargetSquared)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompDistanceToTargetSquared;
-                    //fitCompDistToTargetSquared.pointA = currentAgentsArray[populationIndex].rootObject.transform.localPosition;
-                    //fitCompDistToTargetSquared.pointB = currentAgentsArray[populationIndex].targetSensorList[0].targetPosition.localPosition;
-                    break;
-                case FitnessComponentType.Velocity:
-                    //FitCompVelocity fitCompVelocity = (FitCompVelocity)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompVelocity;
-                    //fitCompVelocity.vel = currentAgentsArray[populationIndex].rootObject.GetComponent<Rigidbody>().velocity;
-                    break;
-                case FitnessComponentType.ContactHazard:
-                    FitCompContactHazard fitCompContactHazard = (FitCompContactHazard)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompContactHazard;
-                    float contactScore = 0f;
-                    if (currentAgentsArray[populationIndex].contactSensorList.Count > 0) {
-
-                        for (int j = 0; j < currentAgentsArray[populationIndex].contactSensorList.Count; j++) {
-                            if (currentAgentsArray[populationIndex].contactSensorList[j].component.contact)
-                                contactScore += 1f;
-                        }
-                    }
-                    fitCompContactHazard.contactCount = contactScore;
-                    
-                    break;
-                case FitnessComponentType.DamageInflicted:
-                    //FitCompDamageInflicted fitCompDamageInflicted = (FitCompDamageInflicted)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompDamageInflicted;
-                    //fitCompDamageInflicted.damage = currentAgentsArray[populationIndex].weaponProjectileList[0].damageInflicted[0] + currentAgentsArray[populationIndex].weaponTazerList[0].damageInflicted[0];
-                    break;
-                case FitnessComponentType.Health:
-                    //FitCompHealth fitCompHealth = (FitCompHealth)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompHealth;
-                    //fitCompHealth.health = currentAgentsArray[populationIndex].healthModuleList[0].health;
-                    break;
+                case FitnessComponentType.DistanceToEnemy:
+                    FitCompDistanceToEnemy fitCompDistToTargetSquared = (FitCompDistanceToEnemy)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompDistanceToEnemy;
+                    fitCompDistToTargetSquared.ownPos = currentAgentsArray[populationIndex].transform.localPosition;
+                    fitCompDistToTargetSquared.enemyPos = currentAgentsArray[populationIndex].testModule.enemyTransform.localPosition;
+                    break;                
                 case FitnessComponentType.Random:
                     // handled fully within the FitCompRandom class
-                    break;
-                case FitnessComponentType.WinLoss:
-                    //FitCompWinLoss fitCompWinLoss = (FitCompWinLoss)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompWinLoss;
-                    //fitCompWinLoss.score = agentGameScoresArray[populationIndex];
-                    break;
-                case FitnessComponentType.DistToOrigin:
-                    //FitCompDistFromOrigin fitCompDistFromOrigin = (FitCompDistFromOrigin)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompDistFromOrigin;
-                    //fitCompDistFromOrigin.pointA = currentAgentsArray[populationIndex].transform.localPosition + currentAgentsArray[populationIndex].rootObject.transform.localPosition;
-                    //fitCompDistFromOrigin.pointB = currentEvalTicket.environmentGenome.agentStartPositionsList[populationIndex].agentStartPosition;                    
-                    break;
-                case FitnessComponentType.Altitude:
-                    //FitCompAltitude fitCompAltitude = (FitCompAltitude)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompAltitude;
-                    //fitCompAltitude.altitude = currentAgentsArray[populationIndex].rootObject.transform.TransformPoint(currentAgentsArray[populationIndex].rootCOM).y - this.transform.position.y - Vector3.Dot(currentAgentsArray[populationIndex].rootObject.transform.up, Physics.gravity.normalized) * 1f;
-                    break;
-                case FitnessComponentType.Custom:
-                    //FitCompCustom fitCompCustom = (FitCompCustom)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompCustom;
-                    //fitCompCustom.custom = currentAgentsArray[populationIndex].segmentList[7].transform.TransformPoint(currentAgentsArray[populationIndex].rootCOM).y - this.transform.position.y - Vector3.Dot(currentAgentsArray[populationIndex].segmentList[7].transform.up, Physics.gravity.normalized) * 1f; ;
-                    break;
+                    break;                
                 default:
                     Debug.LogError("ERROR!!! Fitness Type not found!!! " + fitnessComponentEvaluationGroup.fitCompList[i].sourceDefinition.type.ToString());
                     break;
             }
-        }*/
+        }
     }
-    private void CalculateFitnessScores() {
-        /*
+    private void CalculateFitnessScores() {        
         if (!isExhibition) {
             // Temp for now: in order to update positions...
             HookUpFitnessComponents();
@@ -316,7 +286,7 @@ public class EvaluationInstance : MonoBehaviour {
             for (int i = 0; i < fitnessComponentEvaluationGroup.fitCompList.Count; i++) {
                 fitnessComponentEvaluationGroup.fitCompList[i].TickScore();
             }
-        }*/
+        }
     }
     // !#$!#$!@ HARDCODED FOR 1 or 2 players only!!!!
     public void CalculateGameScores() {  // only applies to players for now...
@@ -338,13 +308,13 @@ public class EvaluationInstance : MonoBehaviour {
         }
     }
     public void AverageFitnessComponentsByTimeSteps() {
-        /*
+        
         for (int i = 0; i < fitnessComponentEvaluationGroup.fitCompList.Count; i++) {
             if (fitnessComponentEvaluationGroup.fitCompList[i].sourceDefinition.measure == FitnessComponentMeasure.Avg) {
                 if (currentTimeStep > 1)
                     fitnessComponentEvaluationGroup.fitCompList[i].rawScore /= (currentTimeStep - 1);
             }
-        }*/
+        }
     }
 
     public void SetInvisibleTraverse(GameObject obj) {

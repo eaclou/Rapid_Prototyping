@@ -36,7 +36,9 @@ public class BrainGenome {
         InitializeAxons(initialWeightMultiplier);
     }
 
-    public void InitializeBodyNeurons(BodyGenome bodyGenome) {        
+    public void InitializeBodyNeurons(BodyGenome bodyGenome) {
+        bodyGenome.InitializeBrainGenome(bodyNeuronList);
+
         /*for (int i = 0; i < bodyGenome.healthModuleList.Count; i++) {
             bodyGenome.healthModuleList[i].InitializeBrainGenome(bodyNeuronList);
         }        
@@ -97,6 +99,7 @@ public class BrainGenome {
         }*/
 
         //PrintBrainGenome();
+        //Debug.Log("numAxons: " + linkList.Count.ToString());
     }
 
     public void SetToMutatedCopyOfParentGenome(BrainGenome parentGenome, TrainingSettingsManager settings) {

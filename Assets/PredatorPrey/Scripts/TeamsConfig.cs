@@ -10,7 +10,7 @@ public class TeamsConfig {
 
     // default population sizes:
     private int numEnvironmentGenomes = 2;
-    private int numAgentGenomesPerPlayer = 16;
+    private int numAgentGenomesPerPlayer = 64;
 
     public TeamsConfig(int numPlayers, int numEnvironmentReps, int numPlayerReps) {
         
@@ -30,7 +30,7 @@ public class TeamsConfig {
             templateBodyGenome.InitializeGenomeAsDefault();
 
             // List of Agent Genomes
-            PlayerPopulation player = new PlayerPopulation(templateBodyGenome, numAgentGenomesPerPlayer, numPlayerReps);
+            PlayerPopulation player = new PlayerPopulation(i, templateBodyGenome, numAgentGenomesPerPlayer, numPlayerReps);
 
             playersList.Add(player);
         }

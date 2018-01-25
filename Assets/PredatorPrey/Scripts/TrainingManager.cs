@@ -36,7 +36,7 @@ public class TrainingManager : MonoBehaviour {
     public void NewTrainingMode() {
         
         // Initialize
-        int numPlayers = 1;
+        int numPlayers = 2;
         
         // environment is evolvable, 1 player:
         teamsConfig = new TeamsConfig(numPlayers, 1, 1);
@@ -99,23 +99,26 @@ public class TrainingManager : MonoBehaviour {
     }
 
     private void NextGeneration() {
-        
+        Debug.Log("Generation " + playingCurGen.ToString() + " Complete!");
         // Crossover:
-        //teamsConfig.environmentPopulation.fitnessManager.ProcessAndRankRawFitness(teamsConfig.environmentPopulation.popSize);
-        
+        teamsConfig.environmentPopulation.fitnessManager.ProcessAndRankRawFitness(teamsConfig.environmentPopulation.popSize);
+        for (int i = 0; i < teamsConfig.playersList.Count; i++) {
+            //Debug.Log("Player " + i.ToString());
+            teamsConfig.playersList[i].fitnessManager.ProcessAndRankRawFitness(teamsConfig.playersList[i].popSize);            
+        }
         Crossover();
 
         // Cleanup for next Gen:
         // Reset fitness data:
         
-        //teamsConfig.environmentPopulation.fitnessManager.InitializeForNewGeneration(teamsConfig.environmentPopulation.environmentGenomeList.Count);
-        //teamsConfig.environmentPopulation.historicGenomePool.Add(teamsConfig.environmentPopulation.environmentGenomeList[0]);
-        //teamsConfig.environmentPopulation.ResetRepresentativesList();
+        teamsConfig.environmentPopulation.fitnessManager.InitializeForNewGeneration(teamsConfig.environmentPopulation.environmentGenomeList.Count);
+        teamsConfig.environmentPopulation.historicGenomePool.Add(teamsConfig.environmentPopulation.environmentGenomeList[0]);
+        teamsConfig.environmentPopulation.ResetRepresentativesList();
 
         for (int i = 0; i < teamsConfig.playersList.Count; i++) {            
-            //teamsConfig.playersList[i].fitnessManager.InitializeForNewGeneration(teamsConfig.playersList[i].agentGenomeList.Count);
-            //teamsConfig.playersList[i].historicGenomePool.Add(teamsConfig.playersList[i].agentGenomeList[0]);
-            //teamsConfig.playersList[i].ResetRepresentativesList();
+            teamsConfig.playersList[i].fitnessManager.InitializeForNewGeneration(teamsConfig.playersList[i].agentGenomeList.Count);
+            teamsConfig.playersList[i].historicGenomePool.Add(teamsConfig.playersList[i].agentGenomeList[0]);
+            teamsConfig.playersList[i].ResetRepresentativesList();
         }        
 
         // Reset default evals + exhibition
@@ -171,14 +174,12 @@ public class TrainingManager : MonoBehaviour {
         */
     }
     private void AgentCrossover(int playerIndex) {
-        /*
+        
         List<BrainGenome> newGenBrainGenomeList = new List<BrainGenome>(); // new population!        
 
         FitnessManager fitnessManager = teamsConfig.playersList[playerIndex].fitnessManager;
         TrainingSettingsManager trainingSettingsManager = teamsConfig.playersList[playerIndex].trainingSettingsManager;
-        //float mutationChance = trainingSettingsManager.mutationChance;
-        //float mutationStepSize = trainingSettingsManager.mutationStepSize;
-
+        
         // Keep top-half peformers + mutations:
         for (int x = 0; x < teamsConfig.playersList[playerIndex].agentGenomeList.Count; x++) {
             if (x == 0) {
@@ -201,6 +202,6 @@ public class TrainingManager : MonoBehaviour {
         for (int i = 0; i < teamsConfig.playersList[playerIndex].agentGenomeList.Count; i++) {
             teamsConfig.playersList[playerIndex].agentGenomeList[i].brainGenome = newGenBrainGenomeList[i];
         }
-        */
+        
     }
 }
