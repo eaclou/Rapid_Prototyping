@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Agent : MonoBehaviour {
 
-    //public AgentGenome genome;
+    //public AgentGenome genome;    
     public Brain brain;
 
     public TestModule testModule;
@@ -22,7 +22,15 @@ public class Agent : MonoBehaviour {
 
     public void MapNeuronToModule(NID nid, Neuron neuron) {
         testModule.MapNeuron(nid, neuron);
-        
+        // Hidden nodes!
+        if (nid.moduleID == -1) {
+            //Debug.Log("Map Hidden Neuron #" + nid.neuronID.ToString());
+
+            neuron.currentValue = new float[1];
+            neuron.neuronType = NeuronGenome.NeuronType.Hid;
+            neuron.previousValue = 0f;
+        }
+
         /*
         for (int i = 0; i < healthModuleList.Count; i++) {
             healthModuleList[i].MapNeuron(nid, neuron);
@@ -62,7 +70,7 @@ public class Agent : MonoBehaviour {
     }
     public void RunModules(int timeStep, Environment currentEnvironment) {
         testModule.Tick();
-        Vector3 agentPos = new Vector3(testModule.posX[0], testModule.posY[0], 0f);
+        Vector3 agentPos = new Vector3(testModule.ownPosX[0], testModule.ownPosY[0], 0f);
         this.transform.localPosition = agentPos;
 
         //for (int i = 0; i < healthModuleList.Count; i++) {

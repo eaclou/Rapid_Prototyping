@@ -5,7 +5,8 @@ using UnityEngine;
 [System.Serializable]
 public enum FitnessComponentType {
     DistanceToEnemy,
-    Random
+    Random,
+    WinLoss
 };
 [System.Serializable]
 public enum FitnessComponentMeasure {

@@ -98,8 +98,27 @@ public class TrainingManager : MonoBehaviour {
         Time.timeScale = Mathf.Clamp(playbackSpeed, 0.1f, 100f);
     }
 
+    public void Play1X() {
+        playbackSpeed = 1f;
+        Time.timeScale = Mathf.Clamp(playbackSpeed, 0.1f, 100f);
+        trainingPaused = false;
+    }
+    public void Play4X() {
+        playbackSpeed = 4f;
+        Time.timeScale = Mathf.Clamp(playbackSpeed, 0.1f, 100f);
+        trainingPaused = false;
+    }
+    public void Play25X() {
+        playbackSpeed = 12f;
+        Time.timeScale = Mathf.Clamp(playbackSpeed, 0.1f, 100f);
+        trainingPaused = false;
+    }
+
     private void NextGeneration() {
         Debug.Log("Generation " + playingCurGen.ToString() + " Complete!");
+        if(playingCurGen == 100) {
+            
+        }
         // Crossover:
         teamsConfig.environmentPopulation.fitnessManager.ProcessAndRankRawFitness(teamsConfig.environmentPopulation.popSize);
         for (int i = 0; i < teamsConfig.playersList.Count; i++) {
@@ -117,9 +136,13 @@ public class TrainingManager : MonoBehaviour {
 
         for (int i = 0; i < teamsConfig.playersList.Count; i++) {            
             teamsConfig.playersList[i].fitnessManager.InitializeForNewGeneration(teamsConfig.playersList[i].agentGenomeList.Count);
-            teamsConfig.playersList[i].historicGenomePool.Add(teamsConfig.playersList[i].agentGenomeList[0]);
+            //teamsConfig.playersList[i].historicGenomePool.Add(teamsConfig.playersList[i].agentGenomeList[0]);
+            teamsConfig.playersList[i].AddNewHistoricalRepresentative(teamsConfig.playersList[i].agentGenomeList[0]);
             teamsConfig.playersList[i].ResetRepresentativesList();
-        }        
+        }
+
+        // Best Performer Brain:
+        //teamsConfig.playersList[0].agentGenomeList[0].PrintBrainGenome();
 
         // Reset default evals + exhibition
         evaluationManager.ResetForNewGeneration(teamsConfig);        
@@ -142,6 +165,42 @@ public class TrainingManager : MonoBehaviour {
         }
     }
     private void EnvironmentCrossover() {
+
+        /*int randStart = UnityEngine.Random.Range(0, 4);
+        if(randStart == 0) {
+            StartPositionGenome newStart0 = new StartPositionGenome(new Vector3(-5f, 0f, 0f), Quaternion.identity);
+            StartPositionGenome newStart1 = new StartPositionGenome(new Vector3(5f, 0f, 0f), Quaternion.identity);
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[0] = newStart0;
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[1] = newStart1;
+        }
+        else if(randStart == 1) {
+            StartPositionGenome newStart0 = new StartPositionGenome(new Vector3(5f, 0f, 0f), Quaternion.identity);
+            StartPositionGenome newStart1 = new StartPositionGenome(new Vector3(-5f, 0f, 0f), Quaternion.identity);
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[0] = newStart0;
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[1] = newStart1;
+        }
+        else if (randStart == 2) {
+            StartPositionGenome newStart0 = new StartPositionGenome(new Vector3(0f, -5f, 0f), Quaternion.identity);
+            StartPositionGenome newStart1 = new StartPositionGenome(new Vector3(0f, 5f, 0f), Quaternion.identity);
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[0] = newStart0;
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[1] = newStart1;
+        }
+        else {
+            StartPositionGenome newStart0 = new StartPositionGenome(new Vector3(0f, 5f, 0f), Quaternion.identity);
+            StartPositionGenome newStart1 = new StartPositionGenome(new Vector3(0f, -5f, 0f), Quaternion.identity);
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[0] = newStart0;
+            teamsConfig.environmentPopulation.environmentGenomeList[0].agentStartPositionsList[1] = newStart1;
+        }*/
+        for(int e = 0; e < teamsConfig.environmentPopulation.environmentGenomeList.Count; e++) {
+            float randAngleRad = UnityEngine.Random.Range(-Mathf.PI, Mathf.PI);
+            float randRadius = UnityEngine.Random.Range(2.5f, 7.5f);
+            StartPositionGenome newStart0 = new StartPositionGenome(new Vector3(Mathf.Cos(randAngleRad) * randRadius, Mathf.Sin(randAngleRad) * randRadius, 0f), Quaternion.identity);
+            StartPositionGenome newStart1 = new StartPositionGenome(new Vector3(Mathf.Cos(randAngleRad + Mathf.PI) * randRadius, Mathf.Sin(randAngleRad + Mathf.PI) * randRadius, 0f), Quaternion.identity);
+            teamsConfig.environmentPopulation.environmentGenomeList[e].agentStartPositionsList[0] = newStart0;
+            teamsConfig.environmentPopulation.environmentGenomeList[e].agentStartPositionsList[1] = newStart1;
+        }
+        
+
         /*
         List<EnvironmentGenome> newGenGenomeList = new List<EnvironmentGenome>(); // new population!     
 

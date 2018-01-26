@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class Brain {
     public List<Neuron> neuronList;
     public Dictionary<NID, int> IDs;

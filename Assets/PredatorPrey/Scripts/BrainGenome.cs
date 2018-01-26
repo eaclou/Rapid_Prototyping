@@ -56,8 +56,8 @@ public class BrainGenome {
         }
         // Create Hidden nodes TEMP!!!!
         for (int i = 0; i < numInputs; i++) {
-            //NeuronGenome neuron = new NeuronGenome(NeuronGenome.NeuronType.Hid, 20, i);
-            //brainGenome.neuronList.Add(neuron);
+            NeuronGenome neuron = new NeuronGenome(NeuronGenome.NeuronType.Hid, -1, i);
+            hiddenNeuronList.Add(neuron);
         }
 
         // Create initial connections -- :
@@ -83,20 +83,20 @@ public class BrainGenome {
                 linkList.Add(linkGenome);
             }
         }
-        /*for (int i = 0; i < outputNeuronList.Count; i++) {
+        for (int i = 0; i < outputNeuronList.Count; i++) {
             for(int j = 0; j < hiddenNeuronList.Count; j++) {
                 float randomWeight = Gaussian.GetRandomGaussian() * initialWeightMultiplier;
                 LinkGenome linkGenome = new LinkGenome(hiddenNeuronList[j].nid.moduleID, hiddenNeuronList[j].nid.neuronID, outputNeuronList[i].nid.moduleID, outputNeuronList[i].nid.neuronID, randomWeight, true);
-                brainGenome.linkList.Add(linkGenome);
+                linkList.Add(linkGenome);
             }
         }
         for (int i = 0; i < hiddenNeuronList.Count; i++) {
             for (int j = 0; j < inputNeuronList.Count; j++) {
                 float randomWeight = Gaussian.GetRandomGaussian() * initialWeightMultiplier;
                 LinkGenome linkGenome = new LinkGenome(inputNeuronList[j].nid.moduleID, inputNeuronList[j].nid.neuronID, hiddenNeuronList[i].nid.moduleID, hiddenNeuronList[i].nid.neuronID, randomWeight, true);
-                brainGenome.linkList.Add(linkGenome);
+                linkList.Add(linkGenome);
             }
-        }*/
+        }
 
         //PrintBrainGenome();
         //Debug.Log("numAxons: " + linkList.Count.ToString());
@@ -122,8 +122,9 @@ public class BrainGenome {
             float randChance = UnityEngine.Random.Range(0f, 1f);
             if (randChance < settings.mutationChance) {
                 float randomWeight = Gaussian.GetRandomGaussian();
-                newLinkGenome.weight = Mathf.Lerp(newLinkGenome.weight, randomWeight, settings.mutationStepSize);
+                newLinkGenome.weight = newLinkGenome.weight + Mathf.Lerp(0f, randomWeight, settings.mutationStepSize);
             }
+            newLinkGenome.weight *= 0.95f;
             linkList.Add(newLinkGenome);
         }
 

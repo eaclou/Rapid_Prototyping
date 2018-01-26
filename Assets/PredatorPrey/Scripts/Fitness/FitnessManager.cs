@@ -116,7 +116,7 @@ public class FitnessManager {
 
     public void InitializeForNewGeneration(int populationSize) {
 
-        Debug.Log("InitializeForNewGeneration: " + populationSize.ToString());
+        //Debug.Log("InitializeForNewGeneration: " + populationSize.ToString());
         if (FitnessEvalGroupArray == null) {
             FitnessEvalGroupArray = new List<FitnessComponentEvaluationGroup>[populationSize];
             for (int i = 0; i < populationSize; i++) { // for each genome:                
@@ -227,7 +227,9 @@ public class FitnessManager {
             componentRecordMinimums[a] = new float[FitnessEvalGroupArray[a].Count]; // questionable?
             componentRecordMaximums[a] = new float[FitnessEvalGroupArray[a].Count];
             //componentAverageBaselineScores[a] = new float[FitnessEvalGroupArray[a].Count];
+
             componentRawTotalScore[a] = new float[FitnessEvalGroupArray[a].Count];
+            
             //componentWorstIndividualScores[a] = new float[FitnessEvalGroupArray[a].Count];
             //componentBestIndividualScores[a] = new float[FitnessEvalGroupArray[a].Count];
 
@@ -264,6 +266,9 @@ public class FitnessManager {
                 }
             }
         }
+        //for(int i = 0; i < numComponents; i++ ) {
+         //   Debug.Log(fitnessComponentDefinitions[i].type.ToString() + ": ");
+        //}
 
         // Loop through components and get NORMALIZED WEIGHTS:
         float totalFitCompWeight = 0f;
@@ -275,7 +280,7 @@ public class FitnessManager {
             componentWeightsNormalized[f] = Mathf.Clamp01(fitnessComponentDefinitions[f].weight / totalFitCompWeight);
         }
         
-        for (int i = 0; i < numComponents; i++) {
+        /*for (int i = 0; i < numComponents; i++) {
             // For each Trial:
             for (int k = 0; k < FitnessEvalGroupArray[0].Count; k++) {
                 float rawAvgPopScore;
@@ -291,7 +296,7 @@ public class FitnessManager {
                     normalizedAvgComponentScore = 0f;
                 }
             }            
-        }
+        }*/
         
         //=================================================================================================
         // FINAL PROCESSED SINGLE FLOAT SCORE::::
@@ -349,7 +354,7 @@ public class FitnessManager {
         for (int i = 0; i < processedFitnessScores.Length; i++) {
             fitnessRankText += "[" + rankedIndicesList[i].ToString() + "]: " + rankedFitnessList[i].ToString() + "\n";
         }
-        Debug.Log(fitnessRankText);
+        //Debug.Log(fitnessRankText);
         
         //if (avgRatioBest > alltimeMaxRatioValue) {
         //alltimeMaxRatioValue = avgRatioBest;

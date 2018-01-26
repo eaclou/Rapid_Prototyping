@@ -130,16 +130,23 @@ public class EvaluationInstance : MonoBehaviour {
 
         // Create Agents:        
         for (int i = 0; i < currentAgentsArray.Length; i++) {
-
+            string assetURL = "";
+            if(i == 0) {
+                assetURL = "PredatorPrey/PredatorPrefab";
+            }
+            else {
+                assetURL = "PredatorPrey/PreyPrefab";
+            }
             // Create Agent Base Body:
             //GameObject agentGO = Instantiate(Resources.Load(AgentBodyGenomeTemplate.GetAgentBodyTypeURL(currentEvalTicket.agentGenomesList[i].bodyGenome.bodyType))) as GameObject;
             //GameObject agentGO = new GameObject("Agent_" + currentEvalTicket.agentGenomesList[i].index.ToString());
-            GameObject agentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            //GameObject agentGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject agentGO = Instantiate(Resources.Load(assetURL)) as GameObject;
             agentGO.name = "Player[" + i.ToString() + "] Agent[" + currentEvalTicket.agentGenomesList[i].index.ToString() + "]";
             agentGO.transform.parent = gameObject.transform;
             agentGO.transform.localPosition = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartPosition;
             agentGO.transform.localRotation = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartRotation;
-            agentGO.GetComponent<Collider>().enabled = false;
+            //agentGO.GetComponent<Collider>().enabled = false;
             Agent agentScript = agentGO.AddComponent<Agent>();            
             agentScript.isVisible = visible;
 
@@ -215,6 +222,7 @@ public class EvaluationInstance : MonoBehaviour {
             for(int e = 0; e < currentAgentsArray.Length; e++) {
                 if(e != p) {  // not vs self:
                     currentAgentsArray[p].testModule.enemyTransform = currentAgentsArray[e].transform;
+                    currentAgentsArray[p].testModule.enemyTestModule = currentAgentsArray[e].testModule;
                     //currentAgentsArray[p].testModule.enemyPosX[0] = currentAgentsArray[e].testModule.posX[0] - currentAgentsArray[p].testModule.posX[0];
                     //currentAgentsArray[p].testModule.enemyPosY[0] = currentAgentsArray[e].testModule.posY[0] - currentAgentsArray[p].testModule.posY[0];
                 }
@@ -271,7 +279,11 @@ public class EvaluationInstance : MonoBehaviour {
                     break;                
                 case FitnessComponentType.Random:
                     // handled fully within the FitCompRandom class
-                    break;                
+                    break;
+                case FitnessComponentType.WinLoss:
+                    FitCompWinLoss fitCompWinLoss = (FitCompWinLoss)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompWinLoss;
+                    fitCompWinLoss.score = agentGameScoresArray[populationIndex];
+                    break;
                 default:
                     Debug.LogError("ERROR!!! Fitness Type not found!!! " + fitnessComponentEvaluationGroup.fitCompList[i].sourceDefinition.type.ToString());
                     break;
@@ -296,15 +308,38 @@ public class EvaluationInstance : MonoBehaviour {
 
         }
         else {
-            //float dotUp = Vector3.Dot(currentAgentsArray[0].rootObject.transform.up, new Vector3(0f, 1f, 0f));
+            //float dotUp = Vector3.Dot(currentAgentsArray[0].rootObject.transform.up, new Vector3(0f, 1f, 0f));  // OLD
             //if (dotUp < 0.3) {
             //    agentGameScoresArray[0][0] = -5f;
             //    gameWonOrLost = false;
             //}
+            agentGameScoresArray[1][0] = (float)currentTimeStep / (float)maxTimeSteps;
+
+            // Predator (player 0):
+            if (currentAgentsArray[0].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[0].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosY[0] >= 9.99f) {
+                agentGameScoresArray[0][0] = -5f;  // predator gets large penalty
+                //agentGameScoresArray[1][0] = 0f; // prey gets nothing
+                gameWonOrLost = true;
+            }            
+            // Prey (player 0):
+            if (currentAgentsArray[1].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[1].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosY[0] >= 9.99f) {
+                agentGameScoresArray[1][0] += -1f;  // prey gets large penalty
+                agentGameScoresArray[0][0] += 0.25f; // predator gets small reward for prey suicide
+                gameWonOrLost = true;
+            }
+
+            Vector2 predPos = new Vector2(currentAgentsArray[0].testModule.ownPosX[0], currentAgentsArray[0].testModule.ownPosY[0]);
+            Vector2 preyPos = new Vector2(currentAgentsArray[1].testModule.ownPosX[0], currentAgentsArray[1].testModule.ownPosY[0]);
+            if ((predPos - preyPos).magnitude < 1f) {
+                agentGameScoresArray[0][0] += 10f * (1f - (float)currentTimeStep / (float)maxTimeSteps) + 1f;  // predator gets large reward, better if earlier catch
+                agentGameScoresArray[1][0] += -1f; // prey gets large penalty
+                gameWonOrLost = true;
+            }
+            
         }
 
         if (isExhibition) {
-            gameWonOrLost = false;
+            //gameWonOrLost = false;
         }
     }
     public void AverageFitnessComponentsByTimeSteps() {

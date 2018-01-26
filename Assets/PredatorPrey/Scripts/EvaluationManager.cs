@@ -17,13 +17,13 @@ public class EvaluationManager {
     public EvaluationInstance exhibitionInstance;
     //public ExhibitionParticleCurves exhibitionParticleCurves;
 
-    private int maxInstancesX = 5;
-    private int maxInstancesY = 5;
-    private int maxInstancesZ = 5;
+    private int maxInstancesX = 2;
+    private int maxInstancesY = 2;
+    private int maxInstancesZ = 24;
     private float instanceBufferX = 2.5f;
     private float instanceBufferY = 2.5f;
     private float instanceBufferZ = 2.5f;
-    public int maxTimeStepsDefault = 128;
+    public int maxTimeStepsDefault = 2048;
 
 
     public EvaluationManager() {
@@ -181,6 +181,7 @@ public class EvaluationManager {
                                                 agentGenomesList.Add(teamsConfig.playersList[2].representativeGenomeList[k]);
                                                 agentGenomesList.Add(teamsConfig.playersList[3].representativeGenomeList[m]);
                                                 EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[e], agentGenomesList, 1, maxTimeStepsDefault);
+                                                //EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.environmentGenomeList[j], agentGenomesList, 1, maxTimeStepsDefault);
                                                 evaluationTicketList.Add(evalTicket);
                                             }
                                         }
@@ -217,7 +218,8 @@ public class EvaluationManager {
                                     List<AgentGenome> agentGenomesList = new List<AgentGenome>();
                                     agentGenomesList.Add(teamsConfig.playersList[0].agentGenomeList[i]);
                                     agentGenomesList.Add(teamsConfig.playersList[1].representativeGenomeList[j]);
-                                    EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[e], agentGenomesList, 1, maxTimeStepsDefault);
+                                    //EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[e], agentGenomesList, 1, maxTimeStepsDefault);
+                                    EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.environmentGenomeList[j], agentGenomesList, 1, maxTimeStepsDefault);
                                     evaluationTicketList.Add(evalTicket);
                                 }
                             }
@@ -302,7 +304,8 @@ public class EvaluationManager {
                                     List<AgentGenome> agentGenomesList = new List<AgentGenome>();
                                     agentGenomesList.Add(teamsConfig.playersList[0].representativeGenomeList[i]);
                                     agentGenomesList.Add(teamsConfig.playersList[1].agentGenomeList[j]);
-                                    EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[e], agentGenomesList, 2, maxTimeStepsDefault);
+                                    //EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[e], agentGenomesList, 2, maxTimeStepsDefault);
+                                    EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.environmentGenomeList[i], agentGenomesList, 2, maxTimeStepsDefault);
                                     evaluationTicketList.Add(evalTicket);
                                 }
                             }
@@ -424,7 +427,10 @@ public class EvaluationManager {
                     //evaluationInstance.particleCurves = particleTrajectories;
                     float xPos = (x + 1) * (arenaBounds.x + instanceBufferX) - ((float)maxInstancesX * 0.5f) * (arenaBounds.x + instanceBufferX);
                     float zPos = (z + 1) * (arenaBounds.z + instanceBufferZ) - ((float)maxInstancesZ * 0.5f) * (arenaBounds.z + instanceBufferZ);
+
+
                     evalInstanceGO.transform.position = new Vector3(xPos, yPos, zPos);
+                    evalInstanceGO.transform.position = new Vector3(22.5f, 0f, zPos);
                     evaluationInstancesList.Add(evaluationInstance);
 
                     evaluationInstance.isExhibition = false;
@@ -537,7 +543,7 @@ public class EvaluationManager {
         if (genComplete) {
             // All evals complete!
             //TerrainConstructorGPU.ClearCustomHeightRT();
-            Debug.Log("EvaluationManager allEvalsComplete!!!");
+            //Debug.Log("EvaluationManager allEvalsComplete!!!");
             allEvalsComplete = true;
             // NEXTGEN READY
         }
@@ -556,10 +562,11 @@ public class EvaluationManager {
                 exhibitionInstance.Tick();
             }
             else if (exhibitionInstance.currentEvalTicket.status == EvaluationTicket.EvaluationStatus.PendingComplete) {
+                ExhibitionNextGenome(teamsConfig);
                 exhibitionInstance.ClearInstance();
             }
             else {  // Complete
-                exhibitionInstance.ClearInstance();
+                exhibitionInstance.ClearInstance();                
             }
         }
     }
@@ -571,7 +578,7 @@ public class EvaluationManager {
         for (int i = 0; i < numPlayers; i++) {
             agentGenomesList.Add(teamsConfig.playersList[i].representativeGenomeList[0]);
         }
-        EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[0], agentGenomesList, 0, maxTimeStepsDefault * 100);
+        EvaluationTicket evalTicket = new EvaluationTicket(teamsConfig.environmentPopulation.representativeGenomeList[0], agentGenomesList, 0, maxTimeStepsDefault);
         exhibitionTicketList.Add(evalTicket);        
     }
 
@@ -583,6 +590,20 @@ public class EvaluationManager {
         }
         exhibitionTicketList[0].environmentGenome = teamsConfig.environmentPopulation.representativeGenomeList[0];
         //exhibitionTicketList[0].environmentGenome.ClearEnvironmentPrefab();
+    }
+    public void ExhibitionNextGenome(TeamsConfig teamsConfig) {
+        EvaluationTicket exhibitionTicket = exhibitionTicketList[exhibitionTicketCurrentIndex];
+        int currentFocusPop = exhibitionTicket.focusPopIndex;
+        
+        // AGENT 0
+        int currentGenomeIndex = exhibitionTicket.agentGenomesList[0].index;
+        currentGenomeIndex++;
+        if (currentGenomeIndex >= (teamsConfig.playersList[0].agentGenomeList.Count)) {
+            currentGenomeIndex = 0;
+        }
+        exhibitionTicket.agentGenomesList[0] = teamsConfig.playersList[0].agentGenomeList[currentGenomeIndex];
+        
+        ResetExhibitionInstance(teamsConfig);
     }
     public void ResetExhibitionInstance(TeamsConfig teamsConfig) {
                 
