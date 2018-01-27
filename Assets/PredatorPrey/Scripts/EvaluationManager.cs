@@ -19,11 +19,11 @@ public class EvaluationManager {
 
     private int maxInstancesX = 2;
     private int maxInstancesY = 2;
-    private int maxInstancesZ = 24;
+    private int maxInstancesZ = 16;
     private float instanceBufferX = 2.5f;
     private float instanceBufferY = 2.5f;
     private float instanceBufferZ = 2.5f;
-    public int maxTimeStepsDefault = 2048;
+    public int maxTimeStepsDefault = 512;
 
 
     public EvaluationManager() {
@@ -596,13 +596,21 @@ public class EvaluationManager {
         int currentFocusPop = exhibitionTicket.focusPopIndex;
         
         // AGENT 0
-        int currentGenomeIndex = exhibitionTicket.agentGenomesList[0].index;
-        currentGenomeIndex++;
-        if (currentGenomeIndex >= (teamsConfig.playersList[0].agentGenomeList.Count)) {
-            currentGenomeIndex = 0;
+        int currentGenomeIndex0 = exhibitionTicket.agentGenomesList[0].index;
+        currentGenomeIndex0++;
+        if (currentGenomeIndex0 >= (teamsConfig.playersList[0].agentGenomeList.Count)) {
+            currentGenomeIndex0 = 0;
         }
-        exhibitionTicket.agentGenomesList[0] = teamsConfig.playersList[0].agentGenomeList[currentGenomeIndex];
-        
+        exhibitionTicket.agentGenomesList[0] = teamsConfig.playersList[0].agentGenomeList[currentGenomeIndex0];
+
+        // AGENT 1
+        int currentGenomeIndex1 = exhibitionTicket.agentGenomesList[1].index;
+        currentGenomeIndex1++;
+        if (currentGenomeIndex1 >= (teamsConfig.playersList[1].agentGenomeList.Count)) {
+            currentGenomeIndex1 = 0;
+        }
+        exhibitionTicket.agentGenomesList[1] = teamsConfig.playersList[1].agentGenomeList[currentGenomeIndex1];
+
         ResetExhibitionInstance(teamsConfig);
     }
     public void ResetExhibitionInstance(TeamsConfig teamsConfig) {

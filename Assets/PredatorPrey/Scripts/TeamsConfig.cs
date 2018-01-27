@@ -9,7 +9,7 @@ public class TeamsConfig {
     public List<PlayerPopulation> playersList;
 
     // default population sizes:
-    private int numEnvironmentGenomes = 4;
+    private int numEnvironmentGenomes = 6;
     private int numAgentGenomesPerPlayer = 64;
 
     public TeamsConfig(int numPlayers, int numEnvironmentReps, int numPlayerReps) {
@@ -29,12 +29,12 @@ public class TeamsConfig {
             BodyGenome templateBodyGenome = new BodyGenome();
             templateBodyGenome.InitializeGenomeAsDefault();
             if(i == 0f) {
-                templateBodyGenome.testModuleGenome.maxSpeed = 0.2f;
-                templateBodyGenome.testModuleGenome.accel = 0.005f;
+                templateBodyGenome.testModuleGenome.maxSpeed = 0.25f;
+                templateBodyGenome.testModuleGenome.accel = 0.025f;
             }
             else {
                 templateBodyGenome.testModuleGenome.maxSpeed = 1f;
-                templateBodyGenome.testModuleGenome.accel = 0.5f;
+                templateBodyGenome.testModuleGenome.accel = 0.35f;
             }
 
             // List of Agent Genomes

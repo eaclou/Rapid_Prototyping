@@ -11,7 +11,7 @@ public class PlayerPopulation {
     public List<AgentGenome> representativeGenomeList;  // the list of agentGenomes that will be opponents for all other populations this round
     public List<AgentGenome> historicGenomePool;  // a collection of predecessor genomes that can be chosen from
     //public List<AgentGenome> baselineGenomePool;  // a collection of blank and random genomes for fitness comparison purposes.
-    public int maxHistoricGenomePoolSize = 100;
+    public int maxHistoricGenomePoolSize = 256;
 
     public int popSize;
     //public int numBaseline;
@@ -20,7 +20,7 @@ public class PlayerPopulation {
 
     public bool isTraining = true;
     public int numPerformanceReps = 0;
-    public int numHistoricalReps = 3;
+    public int numHistoricalReps = 4;
     //public int numBaselineReps = 0;
 
     public BodyGenome bodyGenomeTemplate;
@@ -45,7 +45,7 @@ public class PlayerPopulation {
         for (int j = 0; j < numGenomes; j++) {
             AgentGenome agentGenome = new AgentGenome(j);
             agentGenome.InitializeBodyGenomeFromTemplate(bodyGenomeTemplate);
-            agentGenome.InitializeRandomBrainFromCurrentBody(0.25f);
+            agentGenome.InitializeRandomBrainFromCurrentBody(0.005f);
             agentGenomeList.Add(agentGenome);
         }
         //RepopulateBaselineGenomes();
@@ -67,7 +67,7 @@ public class PlayerPopulation {
         //fitnessManager.ResetCurrentHistoricalDataLists();
         fitnessManager.InitializeForNewGeneration(agentGenomeList.Count);
         
-        trainingSettingsManager = new TrainingSettingsManager(0.1f, 0.25f, 0.0f, 0.0f);
+        trainingSettingsManager = new TrainingSettingsManager(0.25f, 0.33f, 0.015f, 0.003f);
     }
 
     public void AddNewHistoricalRepresentative(AgentGenome newGenome) {
@@ -103,13 +103,13 @@ public class PlayerPopulation {
         //FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 0.0f, true);
         //fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat1);
         if(index == 0) {
-            FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 1f, false);
+            FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 0.5f, false);
             fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat2);
         }
         else {
             //FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 1f, true);
             //fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat1);
-            FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 0.5f, true);
+            FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 0.33f, true);
             fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat3);
         }
 

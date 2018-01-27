@@ -139,7 +139,15 @@ public class TrainingManager : MonoBehaviour {
             //teamsConfig.playersList[i].historicGenomePool.Add(teamsConfig.playersList[i].agentGenomeList[0]);
             teamsConfig.playersList[i].AddNewHistoricalRepresentative(teamsConfig.playersList[i].agentGenomeList[0]);
             teamsConfig.playersList[i].ResetRepresentativesList();
+
+            teamsConfig.playersList[i].trainingSettingsManager.mutationStepSize *= 0.996f;
+            teamsConfig.playersList[i].trainingSettingsManager.mutationChance *= 0.996f;
+            teamsConfig.playersList[i].trainingSettingsManager.newHiddenNodeChance *= 0.99f;
+            teamsConfig.playersList[i].trainingSettingsManager.newLinkChance *= 0.995f;
         }
+
+        evaluationManager.maxTimeStepsDefault += 4;
+        Mathf.Clamp(evaluationManager.maxTimeStepsDefault, 128, 4096);
 
         // Best Performer Brain:
         //teamsConfig.playersList[0].agentGenomeList[0].PrintBrainGenome();

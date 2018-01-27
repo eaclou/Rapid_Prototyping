@@ -305,7 +305,10 @@ public class EvaluationInstance : MonoBehaviour {
         //float winLossDraw = 0f;
 
         if (gameWonOrLost) {  // if game is over
-
+            if (currentTimeStep >= (maxTimeSteps - 1)) {
+                agentGameScoresArray[0][0] -= 10f;
+                agentGameScoresArray[1][0] += 1f;
+            }
         }
         else {
             //float dotUp = Vector3.Dot(currentAgentsArray[0].rootObject.transform.up, new Vector3(0f, 1f, 0f));  // OLD
@@ -313,7 +316,7 @@ public class EvaluationInstance : MonoBehaviour {
             //    agentGameScoresArray[0][0] = -5f;
             //    gameWonOrLost = false;
             //}
-            agentGameScoresArray[1][0] = (float)currentTimeStep / (float)maxTimeSteps;
+            agentGameScoresArray[1][0] = ((float)currentTimeStep / (float)maxTimeSteps) * 10f;
 
             // Predator (player 0):
             if (currentAgentsArray[0].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[0].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosY[0] >= 9.99f) {
@@ -323,7 +326,7 @@ public class EvaluationInstance : MonoBehaviour {
             }            
             // Prey (player 0):
             if (currentAgentsArray[1].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[1].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosY[0] >= 9.99f) {
-                agentGameScoresArray[1][0] += -1f;  // prey gets large penalty
+                agentGameScoresArray[1][0] += -5f;  // prey gets large penalty
                 agentGameScoresArray[0][0] += 0.25f; // predator gets small reward for prey suicide
                 gameWonOrLost = true;
             }
@@ -331,8 +334,8 @@ public class EvaluationInstance : MonoBehaviour {
             Vector2 predPos = new Vector2(currentAgentsArray[0].testModule.ownPosX[0], currentAgentsArray[0].testModule.ownPosY[0]);
             Vector2 preyPos = new Vector2(currentAgentsArray[1].testModule.ownPosX[0], currentAgentsArray[1].testModule.ownPosY[0]);
             if ((predPos - preyPos).magnitude < 1f) {
-                agentGameScoresArray[0][0] += 10f * (1f - (float)currentTimeStep / (float)maxTimeSteps) + 1f;  // predator gets large reward, better if earlier catch
-                agentGameScoresArray[1][0] += -1f; // prey gets large penalty
+                agentGameScoresArray[0][0] += 10f * (1f - (float)currentTimeStep / (float)maxTimeSteps) + 10f;  // predator gets large reward, better if earlier catch
+                agentGameScoresArray[1][0] += -5f; // prey gets large penalty
                 gameWonOrLost = true;
             }
             
