@@ -45,6 +45,9 @@ public class ImitationLearningManager : MonoBehaviour {
 
     private Agent dummyAgent;
 
+    private Agent displayAgent;
+    private StartPositionGenome displayStartPos;
+
     public float[] rawFitnessScoresArray;
 
     private StartPositionGenome dummyStartGenome;
@@ -161,8 +164,8 @@ public class ImitationLearningManager : MonoBehaviour {
         if(gameMode == GameMode.Training) {
             if(training) {
                 if(dataSamplesList != null) {
-                    if (curTrainingGen < 64) {
-                        for(int i = 0; i < 2048; i++) {
+                    if (curTrainingGen < 512) {
+                        for(int i = 0; i < 256; i++) {
                             TickTrainingMode();
                         }                        
                     }
@@ -171,6 +174,17 @@ public class ImitationLearningManager : MonoBehaviour {
                         training = false;
                     }
                 }
+
+                // Run Agent:
+                displayAgent.TickBrain();
+                displayAgent.testModule.Tick();
+                Vector3 agentPos = new Vector3(displayAgent.testModule.ownPosX[0], displayAgent.testModule.ownPosY[0], 0f);
+                displayAgent.gameObject.transform.localPosition = agentPos;
+                //displayAgent.RunModules()
+                //if (currentTimeStep % 1 == 0) {
+                //    currentAgentsArray[i].TickBrain();
+                //}
+                //currentAgentsArray[i].RunModules(currentTimeStep, currentEnvironment);
             }
                         
         }
@@ -243,9 +257,27 @@ public class ImitationLearningManager : MonoBehaviour {
         dummyAgent = dummyAgentGO.AddComponent<Agent>();
         dummyStartGenome = new StartPositionGenome(Vector3.zero, Quaternion.identity);
 
-        ResetTrainingForNewGen();        
+        ResetTrainingForNewGen();
         //Brain brain = new Brain()        
         //Debug.Log(dummyAgent.testModule.);
+
+        // Create Visible Display Agent to observe behavior
+        displayStartPos = new StartPositionGenome(Vector3.zero, Quaternion.identity);
+        GameObject agentGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        //displayAgent
+        agentGO.name = "Guinea Pig";
+        agentGO.transform.parent = gameObject.transform;
+        agentGO.transform.localPosition = displayStartPos.agentStartPosition;
+        agentGO.transform.localRotation = displayStartPos.agentStartRotation;
+        //agentGO.GetComponent<Collider>().enabled = false;
+        displayAgent = agentGO.AddComponent<Agent>();
+        displayAgent.isVisible = true;
+        displayAgent.InitializeAgentFromTemplate(agentGenomeList[0], displayStartPos);
+        // hook modules:
+        displayAgent.testModule.enemyTransform = targetGO.transform;
+        displayAgent.testModule.bias[0] = 1f;
+        displayAgent.testModule.enemyTestModule = displayAgent.testModule;
+
     }
 
     private void CopyDataSampleToModule(DataSample sample, TestModule module) {
@@ -425,5 +457,38 @@ public class ImitationLearningManager : MonoBehaviour {
         curTestingSample = 0;
         
         dummyAgent.InitializeAgentFromTemplate(agentGenomeList[0], dummyStartGenome);
+    }
+
+    public void ResetTrainingAgentAndEnvironment() {
+
+        // Spawn Player & Target Randomly
+        float randomAngle = UnityEngine.Random.Range(-Mathf.PI, Mathf.PI);
+        float randomRadius = UnityEngine.Random.Range(minSpawnRadius, maxSpawnRadius);
+        Vector3 playerPos = new Vector3(Mathf.Cos(randomAngle) * randomRadius, Mathf.Sin(randomAngle) * randomRadius, 0f);
+        Vector3 targetPos = new Vector3(Mathf.Cos(randomAngle + Mathf.PI) * randomRadius, Mathf.Sin(randomAngle + Mathf.PI) * randomRadius, 0f);        
+        targetGO.transform.position = targetPos;        
+
+        displayStartPos = new StartPositionGenome(playerPos, Quaternion.identity);
+        GameObject agentGO;
+        if (displayAgent == null) {
+            agentGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            displayAgent = agentGO.AddComponent<Agent>();
+        }
+        else {
+            agentGO = displayAgent.gameObject;
+        }
+        //displayAgent
+        agentGO.name = "Guinea Pig";
+        agentGO.transform.parent = gameObject.transform;
+        agentGO.transform.localPosition = displayStartPos.agentStartPosition;
+        agentGO.transform.localRotation = displayStartPos.agentStartRotation;
+        //agentGO.GetComponent<Collider>().enabled = false;        
+        displayAgent.isVisible = true;
+        displayAgent.InitializeAgentFromTemplate(agentGenomeList[0], displayStartPos);
+        // hook modules:
+        displayAgent.testModule.enemyTransform = targetGO.transform;
+        displayAgent.testModule.bias[0] = 1f;
+        displayAgent.testModule.enemyTestModule = displayAgent.testModule;
+
     }
 }

@@ -201,6 +201,7 @@ public class TestModule {
         ownPosX[0] += ownVelX[0];
         ownPosY[0] += ownVelY[0];
 
+        /*
         if(ownPosX[0] > 10f) {
             ownPosX[0] = 10f;
             ownVelX[0] = 0f;
@@ -217,11 +218,32 @@ public class TestModule {
             ownPosY[0] = -10f;
             ownVelY[0] = 0f;
         }
-
         distLeft[0] = 2f - (Mathf.Abs(-10f - ownPosX[0]) / 10f);
         distRight[0] = 2f - (Mathf.Abs(10f - ownPosX[0]) / 10f);
         distUp[0] = 2f - (Mathf.Abs(10f - ownPosY[0]) / 10f);
         distDown[0] = 2f - (Mathf.Abs(-10f - ownPosY[0]) / 10f);
+        */
+
+        if (ownPosX[0] > 21f) {
+            ownPosX[0] = 21f;
+            ownVelX[0] = 0f;
+        }
+        if (ownPosY[0] > 21f) {
+            ownPosY[0] = 21f;
+            ownVelY[0] = 0f;
+        }
+        if (ownPosX[0] < -21f) {
+            ownPosX[0] = -21f;
+            ownVelX[0] = 0f;
+        }
+        if (ownPosY[0] < -21f) {
+            ownPosY[0] = -21f;
+            ownVelY[0] = 0f;
+        }
+        distLeft[0] = Mathf.Abs(-21f - ownPosX[0]);
+        distRight[0] = Mathf.Abs(21f - ownPosX[0]);
+        distUp[0] = Mathf.Abs(21f - ownPosY[0]);
+        distDown[0] = Mathf.Abs(-21f - ownPosY[0]);
 
         // OLD:
         /*

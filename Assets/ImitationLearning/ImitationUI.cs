@@ -69,5 +69,6 @@ public class ImitationUI : MonoBehaviour {
 
     public void ResetEnv() {
         Debug.Log("ResetEnv()");
+        imitationLearningManager.ResetTrainingAgentAndEnvironment();
     }
 }
