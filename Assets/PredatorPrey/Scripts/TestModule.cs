@@ -38,7 +38,8 @@ public class TestModule {
     public float accel = 0.05f;
     public float radius = 1f;
 
-    public Transform enemyTransform;
+    //public Transform enemyTransform;
+    public Rigidbody2D ownRigidBody2D;
     public TestModule enemyTestModule;
 
     //public HealthModuleComponent component;
@@ -55,7 +56,7 @@ public class TestModule {
     public void Initialize(TestModuleGenome genome, Agent agent, StartPositionGenome startPos) {
         //destroyed = false;
         bias = new float[1];
-        bias[0] = 0f;
+        bias[0] = 1f;
 
         ownPosX = new float[1];
         ownPosX[0] = startPos.agentStartPosition.x;
@@ -183,23 +184,26 @@ public class TestModule {
 
     public void Tick() {
         //Vector2 enemyPos = 
+        //Debug.Log("TestModuleTick!");
+
         
 
-        enemyPosX[0] = (enemyTransform.localPosition.x - ownPosX[0]) / 10f;
-        enemyPosY[0] = (enemyTransform.localPosition.y - ownPosY[0]) / 10f;
-
-        Vector2 enemyDir = new Vector2(enemyTransform.localPosition.x - ownPosX[0], enemyTransform.localPosition.y - ownPosY[0]).normalized;
+        Vector2 enemyDir = new Vector2(enemyTestModule.ownRigidBody2D.transform.localPosition.x - ownPosX[0], enemyTestModule.ownRigidBody2D.transform.localPosition.y - ownPosY[0]).normalized;
         enemyDirX[0] = enemyDir.x;
         enemyDirY[0] = enemyDir.y;
 
-        enemyVelX[0] = enemyTestModule.ownVelX[0] - ownVelX[0];
-        enemyVelY[0] = enemyTestModule.ownVelY[0] - ownVelY[0];
+        // Zeroed out temporarily for simplicity:
+        enemyVelX[0] = 0f; // enemyTestModule.ownVelX[0] - ownVelX[0];
+        enemyVelY[0] = 0f; // enemyTestModule.ownVelY[0] - ownVelY[0];
 
-        ownVelX[0] = Mathf.Clamp(ownVelX[0] + throttleX[0] * accel, -maxSpeed, maxSpeed);
-        ownVelY[0] = Mathf.Clamp(ownVelY[0] + throttleY[0] * accel, -maxSpeed, maxSpeed);
+        ownVelX[0] = ownRigidBody2D.velocity.x / 15f; //Mathf.Clamp(ownVelX[0] + throttleX[0] * accel, -maxSpeed, maxSpeed);
+        ownVelY[0] = ownRigidBody2D.velocity.y / 15f; //Mathf.Clamp(ownVelY[0] + throttleY[0] * accel, -maxSpeed, maxSpeed);
 
-        ownPosX[0] += ownVelX[0];
-        ownPosY[0] += ownVelY[0];
+        ownPosX[0] = ownRigidBody2D.transform.localPosition.x;
+        ownPosY[0] = ownRigidBody2D.transform.localPosition.y;
+
+        enemyPosX[0] = (enemyTestModule.ownRigidBody2D.transform.localPosition.x - ownPosX[0]) / 21f;
+        enemyPosY[0] = (enemyTestModule.ownRigidBody2D.transform.localPosition.y - ownPosY[0]) / 21f;
 
         /*
         if(ownPosX[0] > 10f) {
@@ -224,7 +228,7 @@ public class TestModule {
         distDown[0] = 2f - (Mathf.Abs(-10f - ownPosY[0]) / 10f);
         */
 
-        if (ownPosX[0] > 21f) {
+        /*if (ownPosX[0] > 21f) {
             ownPosX[0] = 21f;
             ownVelX[0] = 0f;
         }
@@ -239,11 +243,11 @@ public class TestModule {
         if (ownPosY[0] < -21f) {
             ownPosY[0] = -21f;
             ownVelY[0] = 0f;
-        }
-        distLeft[0] = Mathf.Abs(-21f - ownPosX[0]);
-        distRight[0] = Mathf.Abs(21f - ownPosX[0]);
-        distUp[0] = Mathf.Abs(21f - ownPosY[0]);
-        distDown[0] = Mathf.Abs(-21f - ownPosY[0]);
+        }*/
+        distLeft[0] = Mathf.Abs(-21f - ownPosX[0]) / 21f;
+        distRight[0] = Mathf.Abs(21f - ownPosX[0]) / 21f;
+        distUp[0] = Mathf.Abs(21f - ownPosY[0]) / 21f;
+        distDown[0] = Mathf.Abs(-21f - ownPosY[0]) / 21f;
 
         // OLD:
         /*

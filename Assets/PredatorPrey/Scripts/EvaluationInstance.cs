@@ -146,7 +146,7 @@ public class EvaluationInstance : MonoBehaviour {
             agentGO.transform.parent = gameObject.transform;
             agentGO.transform.localPosition = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartPosition;
             agentGO.transform.localRotation = currentEvalTicket.environmentGenome.agentStartPositionsList[i].agentStartRotation;
-            //agentGO.GetComponent<Collider>().enabled = false;
+            agentGO.GetComponent<CircleCollider2D>().enabled = false;
             Agent agentScript = agentGO.AddComponent<Agent>();            
             agentScript.isVisible = visible;
 
@@ -221,7 +221,7 @@ public class EvaluationInstance : MonoBehaviour {
         for(int p = 0; p < currentAgentsArray.Length; p++) {
             for(int e = 0; e < currentAgentsArray.Length; e++) {
                 if(e != p) {  // not vs self:
-                    currentAgentsArray[p].testModule.enemyTransform = currentAgentsArray[e].transform;
+                    currentAgentsArray[p].testModule.ownRigidBody2D = currentAgentsArray[p].GetComponent<Rigidbody2D>();
                     currentAgentsArray[p].testModule.enemyTestModule = currentAgentsArray[e].testModule;
                     //currentAgentsArray[p].testModule.enemyPosX[0] = currentAgentsArray[e].testModule.posX[0] - currentAgentsArray[p].testModule.posX[0];
                     //currentAgentsArray[p].testModule.enemyPosY[0] = currentAgentsArray[e].testModule.posY[0] - currentAgentsArray[p].testModule.posY[0];
@@ -275,7 +275,7 @@ public class EvaluationInstance : MonoBehaviour {
                 case FitnessComponentType.DistanceToEnemy:
                     FitCompDistanceToEnemy fitCompDistToTargetSquared = (FitCompDistanceToEnemy)fitnessComponentEvaluationGroup.fitCompList[i] as FitCompDistanceToEnemy;
                     fitCompDistToTargetSquared.ownPos = currentAgentsArray[populationIndex].transform.localPosition;
-                    fitCompDistToTargetSquared.enemyPos = currentAgentsArray[populationIndex].testModule.enemyTransform.localPosition;
+                    fitCompDistToTargetSquared.enemyPos = currentAgentsArray[populationIndex].testModule.enemyTestModule.ownRigidBody2D.transform.localPosition;
                     break;                
                 case FitnessComponentType.Random:
                     // handled fully within the FitCompRandom class
@@ -306,8 +306,8 @@ public class EvaluationInstance : MonoBehaviour {
 
         if (gameWonOrLost) {  // if game is over
             if (currentTimeStep >= (maxTimeSteps - 1)) {
-                agentGameScoresArray[0][0] -= 10f;
-                agentGameScoresArray[1][0] += 1f;
+                agentGameScoresArray[0][0] -= 1f;
+                agentGameScoresArray[1][0] += 50f;
             }
         }
         else {
@@ -319,23 +319,23 @@ public class EvaluationInstance : MonoBehaviour {
             agentGameScoresArray[1][0] = ((float)currentTimeStep / (float)maxTimeSteps) * 10f;
 
             // Predator (player 0):
-            if (currentAgentsArray[0].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[0].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[0].testModule.ownPosY[0] >= 9.99f) {
-                agentGameScoresArray[0][0] = -5f;  // predator gets large penalty
+            if (currentAgentsArray[0].testModule.ownPosX[0] <= -20.99f || currentAgentsArray[0].testModule.ownPosX[0] >= 20.99f || currentAgentsArray[0].testModule.ownPosY[0] <= -20.99f || currentAgentsArray[0].testModule.ownPosY[0] >= 20.99f) {
+                agentGameScoresArray[0][0] = -25f;  // predator gets large penalty
                 //agentGameScoresArray[1][0] = 0f; // prey gets nothing
                 gameWonOrLost = true;
             }            
             // Prey (player 0):
-            if (currentAgentsArray[1].testModule.ownPosX[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosX[0] >= 9.99f || currentAgentsArray[1].testModule.ownPosY[0] <= -9.99f || currentAgentsArray[1].testModule.ownPosY[0] >= 9.99f) {
-                agentGameScoresArray[1][0] += -5f;  // prey gets large penalty
-                agentGameScoresArray[0][0] += 0.25f; // predator gets small reward for prey suicide
+            if (currentAgentsArray[1].testModule.ownPosX[0] <= -20.99f || currentAgentsArray[1].testModule.ownPosX[0] >= 20.99f || currentAgentsArray[1].testModule.ownPosY[0] <= -20.99f || currentAgentsArray[1].testModule.ownPosY[0] >= 20.99f) {
+                agentGameScoresArray[1][0] += -25f;  // prey gets large penalty
+                //agentGameScoresArray[0][0] += 0.25f; // predator gets small reward for prey suicide
                 gameWonOrLost = true;
             }
 
             Vector2 predPos = new Vector2(currentAgentsArray[0].testModule.ownPosX[0], currentAgentsArray[0].testModule.ownPosY[0]);
             Vector2 preyPos = new Vector2(currentAgentsArray[1].testModule.ownPosX[0], currentAgentsArray[1].testModule.ownPosY[0]);
-            if ((predPos - preyPos).magnitude < 1f) {
+            if ((predPos - preyPos).magnitude < 2f) {
                 agentGameScoresArray[0][0] += 10f * (1f - (float)currentTimeStep / (float)maxTimeSteps) + 10f;  // predator gets large reward, better if earlier catch
-                agentGameScoresArray[1][0] += -5f; // prey gets large penalty
+                agentGameScoresArray[1][0] += -25f; // prey gets large penalty
                 gameWonOrLost = true;
             }
             

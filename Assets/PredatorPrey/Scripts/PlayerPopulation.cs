@@ -45,7 +45,7 @@ public class PlayerPopulation {
         for (int j = 0; j < numGenomes; j++) {
             AgentGenome agentGenome = new AgentGenome(j);
             agentGenome.InitializeBodyGenomeFromTemplate(bodyGenomeTemplate);
-            agentGenome.InitializeRandomBrainFromCurrentBody(0.005f);
+            agentGenome.InitializeRandomBrainFromCurrentBody(0.2f);
             agentGenomeList.Add(agentGenome);
         }
         //RepopulateBaselineGenomes();
@@ -67,7 +67,7 @@ public class PlayerPopulation {
         //fitnessManager.ResetCurrentHistoricalDataLists();
         fitnessManager.InitializeForNewGeneration(agentGenomeList.Count);
         
-        trainingSettingsManager = new TrainingSettingsManager(0.25f, 0.33f, 0.015f, 0.003f);
+        trainingSettingsManager = new TrainingSettingsManager(0.075f, 0.04f, 0.015f, 0.003f);
     }
 
     public void AddNewHistoricalRepresentative(AgentGenome newGenome) {
@@ -103,13 +103,13 @@ public class PlayerPopulation {
         //FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 0.0f, true);
         //fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat1);
         if(index == 0) {
-            FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 0.5f, false);
+            FitnessComponentDefinition fitCompCombat2 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 1f, false);
             fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat2);
         }
         else {
             //FitnessComponentDefinition fitCompCombat1 = new FitnessComponentDefinition(FitnessComponentType.Random, FitnessComponentMeasure.Avg, 1f, true);
             //fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat1);
-            FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 0.33f, true);
+            FitnessComponentDefinition fitCompCombat3 = new FitnessComponentDefinition(FitnessComponentType.DistanceToEnemy, FitnessComponentMeasure.Avg, 1f, true);
             fitnessManager.fitnessComponentDefinitions.Add(fitCompCombat3);
         }
 

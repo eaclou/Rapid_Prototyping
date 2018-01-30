@@ -425,12 +425,12 @@ public class EvaluationManager {
                     GameObject evalInstanceGO = new GameObject("EvaluationInstance [" + x.ToString() + "," + z.ToString() + "]");
                     EvaluationInstance evaluationInstance = evalInstanceGO.AddComponent<EvaluationInstance>();
                     //evaluationInstance.particleCurves = particleTrajectories;
+                    
                     float xPos = (x + 1) * (arenaBounds.x + instanceBufferX) - ((float)maxInstancesX * 0.5f) * (arenaBounds.x + instanceBufferX);
                     float zPos = (z + 1) * (arenaBounds.z + instanceBufferZ) - ((float)maxInstancesZ * 0.5f) * (arenaBounds.z + instanceBufferZ);
-
-
+                    
                     evalInstanceGO.transform.position = new Vector3(xPos, yPos, zPos);
-                    evalInstanceGO.transform.position = new Vector3(22.5f, 0f, zPos);
+                    evalInstanceGO.transform.position = new Vector3(42f, 0f, zPos);
                     evaluationInstancesList.Add(evaluationInstance);
 
                     evaluationInstance.isExhibition = false;

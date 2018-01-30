@@ -8,6 +8,7 @@ public class Agent : MonoBehaviour {
     public Brain brain;
 
     public TestModule testModule;
+    private Rigidbody2D rigidBody2D;
     //[System.NonSerialized]
     //public List<HealthModule> healthModuleList;
     //[System.NonSerialized]
@@ -15,9 +16,17 @@ public class Agent : MonoBehaviour {
     
     public bool isVisible = false;
 
+    public float horizontalMovementInput = 0f;
+    public float verticalMovementInput = 0f;
+
+    public float speed = 150f;
+
+    public bool humanControlled = false;
+
     // Use this for initialization
     void Start() {
         //Debug.Log("New Agent!");
+        rigidBody2D = GetComponent<Rigidbody2D>();
     }
 
     public void MapNeuronToModule(NID nid, Neuron neuron) {
@@ -68,10 +77,70 @@ public class Agent : MonoBehaviour {
     public void TickBrain() {        
         brain.BrainMasterFunction();
     }
+    public void RunModules() {
+        testModule.Tick();
+
+        //Vector3 agentPos = new Vector3(testModule.ownPosX[0], testModule.ownPosY[0], 0f);
+        //this.transform.localPosition = agentPos;
+
+        if (humanControlled) {
+            horizontalMovementInput = 0f;
+            if (Input.GetKey("left") || Input.GetKey("a")) {
+                horizontalMovementInput -= 1f;
+            }
+            if (Input.GetKey("right") || Input.GetKey("d")) {
+                horizontalMovementInput += 1f;
+            }
+
+            verticalMovementInput = 0f;
+            if (Input.GetKey("up") || Input.GetKey("w")) {
+                verticalMovementInput += 1f;
+            }
+            if (Input.GetKey("down") || Input.GetKey("s")) {
+                verticalMovementInput -= 1f;
+            }
+        }
+        else {
+            horizontalMovementInput = Mathf.Round(testModule.throttleX[0] * 3f / 2f);
+            verticalMovementInput = Mathf.Round(testModule.throttleY[0] * 3f / 2f);
+        }
+
+        // MOVEMENT HERE:
+        this.GetComponent<Rigidbody2D>().AddForce(new Vector2(speed * horizontalMovementInput * Time.deltaTime, 0f), ForceMode2D.Impulse);
+        this.GetComponent<Rigidbody2D>().AddForce(new Vector2(0f, speed * verticalMovementInput * Time.deltaTime), ForceMode2D.Impulse);
+    }
     public void RunModules(int timeStep, Environment currentEnvironment) {
         testModule.Tick();
-        Vector3 agentPos = new Vector3(testModule.ownPosX[0], testModule.ownPosY[0], 0f);
-        this.transform.localPosition = agentPos;
+
+        //Vector3 agentPos = new Vector3(testModule.ownPosX[0], testModule.ownPosY[0], 0f);
+        //this.transform.localPosition = agentPos;
+
+        if(humanControlled) {
+            horizontalMovementInput = 0f;
+            if (Input.GetKey("left") || Input.GetKey("a")) {
+                horizontalMovementInput -= 1f;
+            }
+            if (Input.GetKey("right") || Input.GetKey("d")) {
+                horizontalMovementInput += 1f;
+            }
+
+            verticalMovementInput = 0f;
+            if (Input.GetKey("up") || Input.GetKey("w")) {
+                verticalMovementInput += 1f;
+            }
+            if (Input.GetKey("down") || Input.GetKey("s")) {
+                verticalMovementInput -= 1f;
+            }
+        }
+        else {
+            horizontalMovementInput = Mathf.Round(testModule.throttleX[0] * 3f / 2f);
+            verticalMovementInput = Mathf.Round(testModule.throttleY[0] * 3f / 2f);
+        }
+
+        // MOVEMENT HERE:
+        this.GetComponent<Rigidbody2D>().AddForce(new Vector2(speed * horizontalMovementInput * Time.deltaTime, 0f), ForceMode2D.Impulse);
+        this.GetComponent<Rigidbody2D>().AddForce(new Vector2(0f, speed * verticalMovementInput * Time.deltaTime), ForceMode2D.Impulse);
+        
 
         //for (int i = 0; i < healthModuleList.Count; i++) {
         //    healthModuleList[i].Tick();

@@ -140,10 +140,10 @@ public class TrainingManager : MonoBehaviour {
             teamsConfig.playersList[i].AddNewHistoricalRepresentative(teamsConfig.playersList[i].agentGenomeList[0]);
             teamsConfig.playersList[i].ResetRepresentativesList();
 
-            teamsConfig.playersList[i].trainingSettingsManager.mutationStepSize *= 0.996f;
-            teamsConfig.playersList[i].trainingSettingsManager.mutationChance *= 0.996f;
+            teamsConfig.playersList[i].trainingSettingsManager.mutationStepSize *= 0.9925f;
+            teamsConfig.playersList[i].trainingSettingsManager.mutationChance *= 0.9925f;
             teamsConfig.playersList[i].trainingSettingsManager.newHiddenNodeChance *= 0.99f;
-            teamsConfig.playersList[i].trainingSettingsManager.newLinkChance *= 0.995f;
+            teamsConfig.playersList[i].trainingSettingsManager.newLinkChance *= 0.9925f;
         }
 
         evaluationManager.maxTimeStepsDefault += 4;

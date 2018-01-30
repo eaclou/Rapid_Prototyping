@@ -30,12 +30,15 @@ public class ImitationLearningManager : MonoBehaviour {
     public GameObject playerGO;
     public GameObject targetGO;
 
-    public PlayerController playerScript;
+    public Agent playerAgent;
+    public Agent targetAgent;
+
+    //public PlayerController playerScript;
 
     public List<DataSample> dataSamplesList;
-    private int dataCollectionFrequency = 4;
+    private int dataCollectionFrequency = 18;
 
-    public int trainingPopulationSize = 32;
+    public int trainingPopulationSize = 64;
     private List<AgentGenome> agentGenomeList;
     //private Brain agentBrainList;
     private TrainingSettingsManager trainingSettingsManager;
@@ -45,6 +48,7 @@ public class ImitationLearningManager : MonoBehaviour {
 
     private Agent dummyAgent;
 
+    public GameObject displayGO;
     private Agent displayAgent;
     private StartPositionGenome displayStartPos;
 
@@ -53,6 +57,9 @@ public class ImitationLearningManager : MonoBehaviour {
     private StartPositionGenome dummyStartGenome;
 
     private bool training = true;
+
+    private float lastHorizontalInput = 0f;
+    private float lastVerticalInput = 0f;
 
     // Use this for initialization
     void Start () {
@@ -65,6 +72,90 @@ public class ImitationLearningManager : MonoBehaviour {
 	void Update () {
 		
 	}
+
+    private void CreateFakeData() {
+        dataSamplesList = new List<DataSample>();
+
+        DataSample sample1 = new DataSample();
+        sample1.inputDataArray[0] = 1f;
+        sample1.inputDataArray[1] = 0f;
+        sample1.inputDataArray[2] = 0f;
+        sample1.inputDataArray[3] = 10f;
+        sample1.inputDataArray[4] = 10f;
+        sample1.inputDataArray[5] = 0f;
+        sample1.inputDataArray[6] = 0f;        
+        sample1.inputDataArray[7] = 0.77f;
+        sample1.inputDataArray[8] = 0.77f;
+        sample1.inputDataArray[9] = 0f;
+        sample1.inputDataArray[10] = 0f;
+        sample1.inputDataArray[11] = 0f;
+        sample1.inputDataArray[12] = 0f;
+        
+        sample1.outputDataArray[0] = 1f;
+        sample1.outputDataArray[1] = 1f;
+
+        dataSamplesList.Add(sample1);  // Add to master List
+
+        DataSample sample2 = new DataSample();
+        sample2.inputDataArray[0] = 1f;
+        sample2.inputDataArray[1] = 0f;
+        sample2.inputDataArray[2] = 0f;
+        sample2.inputDataArray[3] = 10f;
+        sample2.inputDataArray[4] = -10f;
+        sample2.inputDataArray[5] = 0f;
+        sample2.inputDataArray[6] = 0f;
+        sample2.inputDataArray[7] = 0.77f;
+        sample2.inputDataArray[8] = -0.77f;
+        sample2.inputDataArray[9] = 0f;
+        sample2.inputDataArray[10] = 0f;
+        sample2.inputDataArray[11] = 0f;
+        sample2.inputDataArray[12] = 0f;
+
+        sample2.outputDataArray[0] = 1f;
+        sample2.outputDataArray[1] = -1f;
+
+        dataSamplesList.Add(sample2);  // Add to master List
+
+        DataSample sample3 = new DataSample();
+        sample3.inputDataArray[0] = 1f;
+        sample3.inputDataArray[1] = 0f;
+        sample3.inputDataArray[2] = 0f;
+        sample3.inputDataArray[3] = -10f;
+        sample3.inputDataArray[4] = 10f;
+        sample3.inputDataArray[5] = 0f;
+        sample3.inputDataArray[6] = 0f;
+        sample3.inputDataArray[7] = -0.77f;
+        sample3.inputDataArray[8] = 0.77f;
+        sample3.inputDataArray[9] = 0f;
+        sample3.inputDataArray[10] = 0f;
+        sample3.inputDataArray[11] = 0f;
+        sample3.inputDataArray[12] = 0f;
+
+        sample3.outputDataArray[0] = -1f;
+        sample3.outputDataArray[1] = 1f;
+
+        dataSamplesList.Add(sample3);  // Add to master List
+
+        DataSample sample4 = new DataSample();
+        sample4.inputDataArray[0] = 1f;
+        sample4.inputDataArray[1] = 0f;
+        sample4.inputDataArray[2] = 0f;
+        sample4.inputDataArray[3] = -10f;
+        sample4.inputDataArray[4] = -10f;
+        sample4.inputDataArray[5] = 0f;
+        sample4.inputDataArray[6] = 0f;
+        sample4.inputDataArray[7] = -0.77f;
+        sample4.inputDataArray[8] = -0.77f;
+        sample4.inputDataArray[9] = 0f;
+        sample4.inputDataArray[10] = 0f;
+        sample4.inputDataArray[11] = 0f;
+        sample4.inputDataArray[12] = 0f;
+
+        sample4.outputDataArray[0] = -1f;
+        sample4.outputDataArray[1] = -1f;
+
+        dataSamplesList.Add(sample4);  // Add to master List
+    }
     
 
     private void RecordPlayerData() {
@@ -88,20 +179,21 @@ public class ImitationLearningManager : MonoBehaviour {
         */
         DataSample sample = new DataSample();
         sample.inputDataArray[0] = 1f;
-        sample.inputDataArray[1] = playerGO.GetComponent<Rigidbody2D>().velocity.x;
-        sample.inputDataArray[2] = playerGO.GetComponent<Rigidbody2D>().velocity.y;
-        sample.inputDataArray[3] = targetGO.transform.position.x - playerGO.transform.position.x;
-        sample.inputDataArray[4] = targetGO.transform.position.y - playerGO.transform.position.y;
+        sample.inputDataArray[1] = playerGO.GetComponent<Rigidbody2D>().velocity.x / 15f;
+        sample.inputDataArray[2] = playerGO.GetComponent<Rigidbody2D>().velocity.y / 15f;
+        sample.inputDataArray[3] = (targetGO.transform.position.x - playerGO.transform.position.x) / 21f;
+        sample.inputDataArray[4] = (targetGO.transform.position.y - playerGO.transform.position.y) / 21f;
         sample.inputDataArray[5] = 0f;
         sample.inputDataArray[6] = 0f;
         Vector2 targetDir = (new Vector2(targetGO.transform.position.x, targetGO.transform.position.y) - new Vector2(playerGO.transform.position.x, playerGO.transform.position.y)).normalized;
         sample.inputDataArray[7] = targetDir.x;
         sample.inputDataArray[8] = targetDir.y;
-        sample.inputDataArray[9] = Mathf.Abs(-21f - targetGO.transform.position.x);
-        sample.inputDataArray[10] = Mathf.Abs(21f - targetGO.transform.position.x);
-        sample.inputDataArray[11] = Mathf.Abs(21f - targetGO.transform.position.y);
-        sample.inputDataArray[12] = Mathf.Abs(-21f - targetGO.transform.position.y);
+        sample.inputDataArray[9] = Mathf.Abs(-21f - playerGO.transform.position.x) / 21f;
+        sample.inputDataArray[10] = Mathf.Abs(21f - playerGO.transform.position.x) / 21f;
+        sample.inputDataArray[11] = Mathf.Abs(21f - playerGO.transform.position.y) / 21f;
+        sample.inputDataArray[12] = Mathf.Abs(-21f - playerGO.transform.position.y) / 21f;
 
+        // @$!@$#!#% REVISIT THIS!! REDUNDANT CODE!!!!!!!!!!!!!!!!!!!!!!!!!!  movement script on Agent also does this....
         float outputHorizontal = 0f;
         if (Input.GetKey("left") || Input.GetKey("a")) {
             outputHorizontal += -1f;
@@ -126,12 +218,36 @@ public class ImitationLearningManager : MonoBehaviour {
         if(gameMode == GameMode.DataCollection) {
             if(curDataCollectionRound < numDataCollectionRounds) {
                 if (curTimeStep < maxTrialTimeSteps) {
-                    playerScript.Movement();
+                    //playerScript.Movement();
+                    playerAgent.RunModules();
+
+                    float curHorizontalInput = 0f;
+                    float curVerticalInput = 0f;
+                    if (Input.GetKey("left") || Input.GetKey("a")) {
+                        curHorizontalInput += -1f;
+                    }
+                    if (Input.GetKey("right") || Input.GetKey("d")) {
+                        curHorizontalInput += 1f;
+                    }
+                    float outputVertical = 0f;
+                    if (Input.GetKey("down") || Input.GetKey("s")) {
+                        curVerticalInput += -1f;
+                    }
+                    if (Input.GetKey("up") || Input.GetKey("w")) {
+                        curVerticalInput += 1f;
+                    }
 
                     // Record Data
-                    if(curTimeStep % dataCollectionFrequency == 0) {
+                    //if (curTimeStep % dataCollectionFrequency == 0 && curTimeStep > 30) {
+                    //    RecordPlayerData();
+                    //}
+
+                    if(curHorizontalInput != lastHorizontalInput || curVerticalInput != lastVerticalInput) {
                         RecordPlayerData();
                     }
+
+                    lastHorizontalInput = curHorizontalInput;
+                    lastVerticalInput = curVerticalInput;
 
                     curTimeStep++;
                 }
@@ -164,7 +280,7 @@ public class ImitationLearningManager : MonoBehaviour {
         if(gameMode == GameMode.Training) {
             if(training) {
                 if(dataSamplesList != null) {
-                    if (curTrainingGen < 512) {
+                    if (curTrainingGen < 2048) {
                         for(int i = 0; i < 256; i++) {
                             TickTrainingMode();
                         }                        
@@ -174,19 +290,23 @@ public class ImitationLearningManager : MonoBehaviour {
                         training = false;
                     }
                 }
+                
+                //Vector3 agentPos = new Vector3(displayAgent.testModule.ownPosX[0], displayAgent.testModule.ownPosY[0], 0f);
+                //displayAgent.gameObject.transform.localPosition = agentPos;
 
-                // Run Agent:
-                displayAgent.TickBrain();
-                displayAgent.testModule.Tick();
-                Vector3 agentPos = new Vector3(displayAgent.testModule.ownPosX[0], displayAgent.testModule.ownPosY[0], 0f);
-                displayAgent.gameObject.transform.localPosition = agentPos;
+                //  INPUT AND MOVEMENT MODEL HERE !!!!  (OR INSIDE AGENT...)
+
+
                 //displayAgent.RunModules()
                 //if (currentTimeStep % 1 == 0) {
                 //    currentAgentsArray[i].TickBrain();
                 //}
                 //currentAgentsArray[i].RunModules(currentTimeStep, currentEnvironment);
             }
-                        
+            // Run Agent:
+            displayAgent.TickBrain();
+            //displayAgent.testModule.Tick();
+            displayAgent.RunModules();
         }
     }
 
@@ -203,13 +323,14 @@ public class ImitationLearningManager : MonoBehaviour {
         Debug.Log("EnterTrainingMode()");
 
         gameMode = GameMode.Training;
-        
+        //CreateFakeData();
         StartNewTrainingMode();
     }
 
     public void StartNewDataCollectionRound() {
         
         curTimeStep = 0;
+        imitationUI.TogglePause();
 
         // Spawn Player & Target Randomly
         float randomAngle = UnityEngine.Random.Range(-Mathf.PI, Mathf.PI);
@@ -217,25 +338,66 @@ public class ImitationLearningManager : MonoBehaviour {
         Vector3 playerPos = new Vector3(Mathf.Cos(randomAngle) * randomRadius, Mathf.Sin(randomAngle) * randomRadius, 0f);
         Vector3 targetPos = new Vector3(Mathf.Cos(randomAngle + Mathf.PI) * randomRadius, Mathf.Sin(randomAngle + Mathf.PI) * randomRadius, 0f);
 
-        if(playerGO == null) {
-            playerGO = Instantiate(Resources.Load("ImitationLearning/Player")) as GameObject;
-            playerGO.transform.position = playerPos;
-            playerScript = playerGO.GetComponent<PlayerController>();
+        BodyGenome templateBodyGenome = new BodyGenome();
+        templateBodyGenome.InitializeGenomeAsDefault();
+        AgentGenome newGenome = new AgentGenome(-1);
+        newGenome.InitializeBodyGenomeFromTemplate(templateBodyGenome);
+        newGenome.InitializeRandomBrainFromCurrentBody(0.0f);
+
+        if (playerGO == null) {                        
+            //ResetTrainingForNewGen();
+            // Create Visible Display Agent to observe behavior
+            //displayStartPos = new StartPositionGenome(Vector3.zero, Quaternion.identity);
+            //playerGO.transform.localPosition = displayStartPos.agentStartPosition;
+            //playerGO.transform.localRotation = displayStartPos.agentStartRotation;
         }
         else {
-            playerGO.transform.position = playerPos;
+            //playerGO.transform.position = playerPos;
+            Destroy(playerGO); // NOT IDEAL
         }
-        
-        if(targetGO == null) {
-            targetGO = Instantiate(Resources.Load("ImitationLearning/Target")) as GameObject;
-            targetGO.transform.position = targetPos;
+        // Instantiate Player (Predator) Human-Controlled:
+        playerGO = Instantiate(Resources.Load("PredatorPrey/PredatorPrefab")) as GameObject;
+        playerAgent = playerGO.AddComponent<Agent>();
+        playerAgent.humanControlled = true;
+        StartPositionGenome playerStartPos = new StartPositionGenome(playerPos, Quaternion.identity);
+        playerGO.transform.position = playerPos;        
+
+        if (targetGO == null) {
+            //targetGO = Instantiate(Resources.Load("PredatorPrey/PreyPrefab")) as GameObject;
+            //targetGO.transform.position = targetPos;
         }
         else {
-            targetGO.transform.position = targetPos;
+            //targetGO.transform.position = targetPos;
+            Destroy(targetGO); // NOT IDEAL
         }
+        targetGO = Instantiate(Resources.Load("PredatorPrey/PreyPrefab")) as GameObject;
+        targetAgent = targetGO.AddComponent<Agent>();
+        targetAgent.humanControlled = false;
+        StartPositionGenome targetStartPos = new StartPositionGenome(targetPos, Quaternion.identity);
+        targetGO.transform.position = targetPos;
+
+
+
+        // Hook-Ups PLAYER:
+        playerAgent.isVisible = true;
+        playerAgent.InitializeAgentFromTemplate(newGenome, playerStartPos);  // creates TestModule
+        // Hook-Ups TARGET:
+        targetAgent.isVisible = true;
+        targetAgent.InitializeAgentFromTemplate(newGenome, targetStartPos);  // creates TestModule
+
+        // hook modules PLAYER:
+        playerAgent.testModule.ownRigidBody2D = playerGO.GetComponent<Rigidbody2D>();
+        playerAgent.testModule.bias[0] = 1f;
+        playerAgent.testModule.enemyTestModule = targetAgent.testModule; // self as target, to zero out targetvel
+        // hook modules TARGET:
+        targetAgent.testModule.ownRigidBody2D = targetGO.GetComponent<Rigidbody2D>();
+        targetAgent.testModule.bias[0] = 1f;
+        targetAgent.testModule.enemyTestModule = playerAgent.testModule; // self as target, to zero out targetvel
     }
 
     public void StartNewTrainingMode() {
+        Destroy(playerGO);
+        
         // Create population brains
         agentGenomeList = new List<AgentGenome>();
 
@@ -247,12 +409,12 @@ public class ImitationLearningManager : MonoBehaviour {
         for (int i = 0; i < trainingPopulationSize; i++) {
             AgentGenome newGenome = new AgentGenome(i);
             newGenome.InitializeBodyGenomeFromTemplate(templateBodyGenome);
-            newGenome.InitializeRandomBrainFromCurrentBody(0.02f);
+            newGenome.InitializeRandomBrainFromCurrentBody(0.033f);
             agentGenomeList.Add(newGenome);
         }
 
         // CrossoverSettings:
-        trainingSettingsManager = new TrainingSettingsManager(0.05f, 0.1f, 0.0f, 0.0f);
+        trainingSettingsManager = new TrainingSettingsManager(0.06f, 0.35f, 0.1f, 0.01f);
         GameObject dummyAgentGO = new GameObject("DummyAgent");
         dummyAgent = dummyAgentGO.AddComponent<Agent>();
         dummyStartGenome = new StartPositionGenome(Vector3.zero, Quaternion.identity);
@@ -262,11 +424,11 @@ public class ImitationLearningManager : MonoBehaviour {
         //Debug.Log(dummyAgent.testModule.);
 
         // Create Visible Display Agent to observe behavior
-        displayStartPos = new StartPositionGenome(Vector3.zero, Quaternion.identity);
-        GameObject agentGO = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        /*displayStartPos = new StartPositionGenome(Vector3.zero, Quaternion.identity);
+        GameObject agentGO = Instantiate(Resources.Load("PredatorPrey/PredatorPrefab")) as GameObject; ; // GameObject.CreatePrimitive(PrimitiveType.Sphere);
         //displayAgent
         agentGO.name = "Guinea Pig";
-        agentGO.transform.parent = gameObject.transform;
+        //agentGO.transform.parent = gameObject.transform;
         agentGO.transform.localPosition = displayStartPos.agentStartPosition;
         agentGO.transform.localRotation = displayStartPos.agentStartRotation;
         //agentGO.GetComponent<Collider>().enabled = false;
@@ -276,8 +438,9 @@ public class ImitationLearningManager : MonoBehaviour {
         // hook modules:
         displayAgent.testModule.enemyTransform = targetGO.transform;
         displayAgent.testModule.bias[0] = 1f;
-        displayAgent.testModule.enemyTestModule = displayAgent.testModule;
-
+        displayAgent.testModule.enemyTestModule = displayAgent.testModule; // self as target, to zero out targetvel
+        */
+        ResetTrainingAgentAndEnvironment();
     }
 
     private void CopyDataSampleToModule(DataSample sample, TestModule module) {
@@ -297,10 +460,10 @@ public class ImitationLearningManager : MonoBehaviour {
     }
 
     private float CompareDataSampleToBrainOutput(DataSample sample, TestModule module) {
-        float throttleX = module.throttleX[0];
-        float throttleY = module.throttleY[0];
-        float deltaX = sample.outputDataArray[0] - throttleX;
-        float deltaY = sample.outputDataArray[1] - throttleY;
+        float throttleX = Mathf.Round(module.throttleX[0] * 3f / 2f);// + module.throttleX[0];
+        float throttleY = Mathf.Round(module.throttleY[0] * 3f / 2f);// + module.throttleY[0];
+        float deltaX = sample.outputDataArray[0] - throttleX + (sample.outputDataArray[0] - module.throttleX[0]) * 0.5f;
+        float deltaY = sample.outputDataArray[1] - throttleY + (sample.outputDataArray[1] - module.throttleY[0]) * 0.5f;
         float distSquared = deltaX * deltaX + deltaY * deltaY;
         return distSquared;
     }
@@ -425,6 +588,9 @@ public class ImitationLearningManager : MonoBehaviour {
         // Reset
         ResetTrainingForNewGen();
 
+        trainingSettingsManager.mutationChance *= 0.996f;
+        trainingSettingsManager.mutationStepSize *= 0.998f;
+
         curTrainingGen++;
     }
 
@@ -464,6 +630,53 @@ public class ImitationLearningManager : MonoBehaviour {
         // Spawn Player & Target Randomly
         float randomAngle = UnityEngine.Random.Range(-Mathf.PI, Mathf.PI);
         float randomRadius = UnityEngine.Random.Range(minSpawnRadius, maxSpawnRadius);
+        Vector3 displayPos = new Vector3(Mathf.Cos(randomAngle) * randomRadius, Mathf.Sin(randomAngle) * randomRadius, 0f);
+        Vector3 targetPos = new Vector3(Mathf.Cos(randomAngle + Mathf.PI) * randomRadius, Mathf.Sin(randomAngle + Mathf.PI) * randomRadius, 0f);
+
+        BodyGenome templateBodyGenome = new BodyGenome();
+        templateBodyGenome.InitializeGenomeAsDefault();
+        AgentGenome newGenome = new AgentGenome(-1);
+        newGenome.InitializeBodyGenomeFromTemplate(templateBodyGenome);
+        newGenome.InitializeRandomBrainFromCurrentBody(0.0f);
+
+        if (displayGO != null) {
+            Destroy(displayGO); // NOT IDEAL
+        }
+        displayGO = Instantiate(Resources.Load("PredatorPrey/PredatorPrefab")) as GameObject;
+        displayAgent = displayGO.AddComponent<Agent>();
+        displayAgent.humanControlled = false;
+        StartPositionGenome displayStartPos = new StartPositionGenome(displayPos, Quaternion.identity);
+        displayGO.transform.position = displayPos;
+
+        if (targetGO != null) {
+            Destroy(targetGO); // NOT IDEAL
+        }
+        targetGO = Instantiate(Resources.Load("PredatorPrey/PreyPrefab")) as GameObject;
+        targetAgent = targetGO.AddComponent<Agent>();
+        targetAgent.humanControlled = false;
+        StartPositionGenome targetStartPos = new StartPositionGenome(targetPos, Quaternion.identity);
+        targetGO.transform.position = targetPos;
+
+        // Hook-Ups PLAYER:
+        displayAgent.isVisible = true;
+        displayAgent.InitializeAgentFromTemplate(agentGenomeList[0], displayStartPos);  // creates TestModule
+        // Hook-Ups TARGET:
+        targetAgent.isVisible = true;
+        targetAgent.InitializeAgentFromTemplate(newGenome, targetStartPos);  // creates TestModule
+
+        // hook modules PLAYER:
+        displayAgent.testModule.ownRigidBody2D = displayGO.GetComponent<Rigidbody2D>();
+        displayAgent.testModule.bias[0] = 1f;
+        displayAgent.testModule.enemyTestModule = targetAgent.testModule; // self as target, to zero out targetvel
+        // hook modules TARGET:
+        targetAgent.testModule.ownRigidBody2D = targetGO.GetComponent<Rigidbody2D>();
+        targetAgent.testModule.bias[0] = 1f;
+        targetAgent.testModule.enemyTestModule = displayAgent.testModule; // self as target, to zero out targetvel
+
+        /*
+        // Spawn Player & Target Randomly
+        float randomAngle = UnityEngine.Random.Range(-Mathf.PI, Mathf.PI);
+        float randomRadius = UnityEngine.Random.Range(minSpawnRadius, maxSpawnRadius);
         Vector3 playerPos = new Vector3(Mathf.Cos(randomAngle) * randomRadius, Mathf.Sin(randomAngle) * randomRadius, 0f);
         Vector3 targetPos = new Vector3(Mathf.Cos(randomAngle + Mathf.PI) * randomRadius, Mathf.Sin(randomAngle + Mathf.PI) * randomRadius, 0f);        
         targetGO.transform.position = targetPos;        
@@ -489,6 +702,6 @@ public class ImitationLearningManager : MonoBehaviour {
         displayAgent.testModule.enemyTransform = targetGO.transform;
         displayAgent.testModule.bias[0] = 1f;
         displayAgent.testModule.enemyTestModule = displayAgent.testModule;
-
+        */
     }
 }
